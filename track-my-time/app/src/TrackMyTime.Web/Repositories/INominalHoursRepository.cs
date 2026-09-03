@@ -9,4 +9,6 @@ public interface INominalHoursRepository
     Task<IReadOnlyList<NominalHoursSetting>> GetAllAsync();
 
     Task<int> CreateAsync(NominalHoursSetting setting);
+    Task UpdateAsync(NominalHoursSetting setting);
+    Task DeleteAsync(int id);
 }

@@ -1,5 +1,6 @@
 @page "/"
 @rendermode InteractiveServer
+@using Microsoft.Data.Sqlite
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
@@ -8,6 +9,7 @@
 @inject IProjectRepository ProjectRepository
 @inject TimeSummaryService SummaryService
 @inject MqttPublisherService MqttPublisher
+@inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h4" GutterBottom="true">Today — @_date.ToString("dddd, d MMMM")</MudText>
 
@@ -34,8 +36,20 @@ else
                             <MudSelectItem T="int" Value="@project.Id">@project.ClientName — @project.Name</MudSelectItem>
                         }
                     </MudSelect>
-                    <MudNumericField T="decimal" Label="Hours" @bind-Value="_form.Hours" Min="0.25m" Step="0.25m" Class="mb-3" />
+                    <MudGrid Class="mb-3">
+                        <MudItem xs="6">
+                            <MudTimePicker Label="Start" @bind-Time="_form.Start" Editable="true" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTimePicker Label="End" @bind-Time="_form.End" Editable="true" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudNumericField T="int" Label="Break (minutes)" @bind-Value="_form.BreakMinutes" Min="0" Class="mb-3" />
                     <MudTextField Label="Note (optional)" @bind-Value="_form.Note" Class="mb-3" />
+                    @if (_formError is not null)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true">@_formError</MudAlert>
+                    }
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveEntryAsync" Disabled="@(_form.ProjectId == 0)">
                         Add entry
                     </MudButton>
@@ -59,12 +73,23 @@ else
                     <MudTable Items="_entries" Dense="true" Hover="true">
                         <HeaderContent>
                             <MudTh>Client / Project</MudTh>
+                            <MudTh>Time</MudTh>
                             <MudTh>Hours</MudTh>
                             <MudTh>Note</MudTh>
                             <MudTh></MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd>@context.ClientName — @context.ProjectName</MudTd>
+                            <MudTd>
+                                @if (context.StartTime is not null && context.EndTime is not null)
+                                {
+                                    @($"{context.StartTime:HH:mm}–{context.EndTime:HH:mm}")
+                                    @if (context.BreakMinutes is > 0)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">(@context.BreakMinutes min break)</MudText>
+                                    }
+                                }
+                            </MudTd>
                             <MudTd>@((context.DurationMinutes / 60m).ToString("0.##"))</MudTd>
                             <MudTd>@context.Note</MudTd>
                             <MudTd>
@@ -85,6 +110,7 @@ else
     private decimal _totalHours;
     private bool _isDayOff;
     private readonly NewEntryForm _form = new();
+    private string? _formError;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -103,20 +129,50 @@ else
 
     private async Task SaveEntryAsync()
     {
-        if (_form.ProjectId == 0 || _form.Hours <= 0)
+        _formError = null;
+        if (_form.ProjectId == 0 || _form.Start is null || _form.End is null)
         {
+            _formError = "Start and end time are required.";
             return;
         }
 
-        await TimeEntryRepository.CreateAsync(new TimeEntry
+        var start = TimeOnly.FromTimeSpan(_form.Start.Value);
+        var end = TimeOnly.FromTimeSpan(_form.End.Value);
+        if (end <= start)
         {
-            Date = _date,
-            ProjectId = _form.ProjectId,
-            DurationMinutes = (int)(_form.Hours * 60),
-            Note = string.IsNullOrWhiteSpace(_form.Note) ? null : _form.Note,
-        });
+            _formError = "End time must be after start time.";
+            return;
+        }
 
-        _form.Hours = 0;
+        var minutes = (int)(end - start).TotalMinutes - _form.BreakMinutes;
+        if (minutes <= 0)
+        {
+            _formError = "The break can't be longer than the time worked.";
+            return;
+        }
+
+        try
+        {
+            await TimeEntryRepository.CreateAsync(new TimeEntry
+            {
+                Date = _date,
+                ProjectId = _form.ProjectId,
+                DurationMinutes = minutes,
+                Note = string.IsNullOrWhiteSpace(_form.Note) ? null : _form.Note,
+                StartTime = start,
+                EndTime = end,
+                BreakMinutes = _form.BreakMinutes,
+            });
+        }
+        catch (SqliteException ex)
+        {
+            _formError = $"Could not save the entry: {ex.Message}";
+            return;
+        }
+
+        _form.Start = null;
+        _form.End = null;
+        _form.BreakMinutes = 0;
         _form.Note = null;
         MqttPublisher.RequestRefresh();
         await LoadAsync();
@@ -147,7 +203,9 @@ else
     private sealed class NewEntryForm
     {
         public int ProjectId { get; set; }
-        public decimal Hours { get; set; }
+        public TimeSpan? Start { get; set; }
+        public TimeSpan? End { get; set; }
+        public int BreakMinutes { get; set; }
         public string? Note { get; set; }
     }
 }

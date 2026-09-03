@@ -24,13 +24,17 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudTextField @bind-Value="_newName" Label="New project name" Immediate="true" />
+                <MudTextField @bind-Value="_newName" Label="@(_editingId is null ? "New project name" : "Project name")" Immediate="true" />
             </MudItem>
-            <MudItem xs="12" sm="4" Class="d-flex align-center">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync"
+            <MudItem xs="12" sm="4" Class="d-flex align-center ga-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync"
                            Disabled="@(string.IsNullOrWhiteSpace(_newName) || _newClientId == 0)">
-                    Add project
+                    @(_editingId is null ? "Add project" : "Save changes")
                 </MudButton>
+                @if (_editingId is not null)
+                {
+                    <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+                }
             </MudItem>
         </MudGrid>
     }
@@ -54,6 +58,7 @@ else
             <MudTd>@context.Name</MudTd>
             <MudTd>@(context.IsActive ? "Active" : "Archived")</MudTd>
             <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context))" />
                 <MudButton Size="Size.Small" OnClick="@(() => ToggleActiveAsync(context))">
                     @(context.IsActive ? "Archive" : "Restore")
                 </MudButton>
@@ -67,6 +72,7 @@ else
     private List<ProjectWithClient>? _projects;
     private string _newName = "";
     private int _newClientId;
+    private int? _editingId;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -80,14 +86,41 @@ else
         }
     }
 
-    private async Task AddAsync()
+    private void StartEdit(ProjectWithClient project)
+    {
+        _editingId = project.Id;
+        _newName = project.Name;
+        _newClientId = project.ClientId;
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _newName = "";
+    }
+
+    private async Task SaveAsync()
     {
         if (string.IsNullOrWhiteSpace(_newName) || _newClientId == 0)
         {
             return;
         }
-        await ProjectRepository.CreateAsync(new Project { ClientId = _newClientId, Name = _newName.Trim() });
-        _newName = "";
+
+        if (_editingId is null)
+        {
+            await ProjectRepository.CreateAsync(new Project { ClientId = _newClientId, Name = _newName.Trim() });
+        }
+        else
+        {
+            var existing = _projects!.Single(p => p.Id == _editingId);
+            await ProjectRepository.UpdateAsync(new Project
+            {
+                Id = existing.Id, ClientId = _newClientId, Name = _newName.Trim(),
+                IsActive = existing.IsActive, Color = existing.Color,
+            });
+        }
+
+        CancelEdit();
         await LoadAsync();
     }
 

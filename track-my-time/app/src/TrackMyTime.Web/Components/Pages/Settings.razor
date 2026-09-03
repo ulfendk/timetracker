@@ -1,10 +1,12 @@
 @page "/settings"
 @rendermode InteractiveServer
+@using Microsoft.Data.Sqlite
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
 @inject INominalHoursRepository NominalHoursRepository
 @inject MqttPublisherService MqttPublisher
+@inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h4" GutterBottom="true">Settings</MudText>
 
@@ -33,25 +35,35 @@
             <HeaderContent>
                 <MudTh>Effective from</MudTh>
                 <MudTh>Weekly hours</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.EffectiveFrom.ToString("d MMM yyyy")</MudTd>
                 <MudTd>@context.WeeklyHours.ToString("0.##")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteAsync(context.Id))" />
+                </MudTd>
             </RowTemplate>
         </MudTable>
     }
 
     <MudGrid>
         <MudItem xs="12" sm="4">
-            <MudDatePicker Label="Effective from" @bind-Date="_newEffectiveFrom" />
+            <MudDatePicker Label="Effective from" @bind-Date="_newEffectiveFrom"
+                            FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
         </MudItem>
         <MudItem xs="12" sm="4">
             <MudNumericField T="decimal" Label="Weekly hours" @bind-Value="_newWeeklyHours" Min="0m" Step="0.5m" />
         </MudItem>
-        <MudItem xs="12" sm="4" Class="d-flex align-center">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync" Disabled="@(_newEffectiveFrom is null)">
-                Add
+        <MudItem xs="12" sm="4" Class="d-flex align-center ga-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(_newEffectiveFrom is null)">
+                @(_editingId is null ? "Add" : "Save changes")
             </MudButton>
+            @if (_editingId is not null)
+            {
+                <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+            }
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -60,23 +72,70 @@
     private List<NominalHoursSetting>? _settings;
     private DateTime? _newEffectiveFrom = DateTime.Today;
     private decimal _newWeeklyHours = 37.5m;
+    private int? _editingId;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
     private async Task LoadAsync() =>
         _settings = (await NominalHoursRepository.GetAllAsync()).OrderByDescending(s => s.EffectiveFrom).ToList();
 
-    private async Task AddAsync()
+    private void StartEdit(NominalHoursSetting setting)
+    {
+        _editingId = setting.Id;
+        _newEffectiveFrom = setting.EffectiveFrom.ToDateTime(TimeOnly.MinValue);
+        _newWeeklyHours = setting.WeeklyHours;
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _newEffectiveFrom = DateTime.Today;
+        _newWeeklyHours = 37.5m;
+    }
+
+    private async Task SaveAsync()
     {
         if (_newEffectiveFrom is null)
         {
             return;
         }
-        await NominalHoursRepository.CreateAsync(new NominalHoursSetting
+
+        var setting = new NominalHoursSetting
         {
+            Id = _editingId ?? 0,
             EffectiveFrom = DateOnly.FromDateTime(_newEffectiveFrom.Value),
             WeeklyHours = _newWeeklyHours,
-        });
+        };
+
+        try
+        {
+            if (_editingId is null)
+            {
+                await NominalHoursRepository.CreateAsync(setting);
+            }
+            else
+            {
+                await NominalHoursRepository.UpdateAsync(setting);
+            }
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 19)
+        {
+            Snackbar.Add("Another nominal-hours entry is already effective from that date.", Severity.Error);
+            return;
+        }
+
+        CancelEdit();
+        MqttPublisher.RequestRefresh();
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        await NominalHoursRepository.DeleteAsync(id);
+        if (_editingId == id)
+        {
+            CancelEdit();
+        }
         MqttPublisher.RequestRefresh();
         await LoadAsync();
     }

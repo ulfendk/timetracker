@@ -26,15 +26,30 @@ public sealed class DayOffRepository(SqliteConnectionFactory connectionFactory) 
         using var connection = connectionFactory.Open();
         var id = await connection.ExecuteScalarAsync<long>(
             """
-            INSERT INTO DayOff (Date, Note) VALUES (@Date, @Note);
+            INSERT INTO DayOff (Date, Note, Type) VALUES (@Date, @Note, @Type);
             SELECT last_insert_rowid();
             """, dayOff);
         return (int)id;
+    }
+
+    public async Task UpdateAsync(DayOff dayOff)
+    {
+        using var connection = connectionFactory.Open();
+        await connection.ExecuteAsync(
+            "UPDATE DayOff SET Date = @Date, Note = @Note, Type = @Type WHERE Id = @Id", dayOff);
     }
 
     public async Task DeleteAsync(int id)
     {
         using var connection = connectionFactory.Open();
         await connection.ExecuteAsync("DELETE FROM DayOff WHERE Id = @id", new { id });
+    }
+
+    public async Task<int> CountByTypeAndDateRangeAsync(DayOffType type, DateOnly from, DateOnly to)
+    {
+        using var connection = connectionFactory.Open();
+        return await connection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM DayOff WHERE Type = @type AND Date BETWEEN @from AND @to",
+            new { type, from, to });
     }
 }

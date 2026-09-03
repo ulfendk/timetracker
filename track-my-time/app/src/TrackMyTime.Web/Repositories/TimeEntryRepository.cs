@@ -8,6 +8,7 @@ public sealed class TimeEntryRepository(SqliteConnectionFactory connectionFactor
 {
     private const string SelectWithNames = """
         SELECT t.Id, t.Date, t.ProjectId, t.DurationMinutes, t.Note,
+               t.StartTime, t.EndTime, t.BreakMinutes,
                p.Name AS ProjectName, p.Color, c.Name AS ClientName
         FROM TimeEntry t
         JOIN Project p ON p.Id = t.ProjectId
@@ -36,8 +37,8 @@ public sealed class TimeEntryRepository(SqliteConnectionFactory connectionFactor
         using var connection = connectionFactory.Open();
         var id = await connection.ExecuteScalarAsync<long>(
             """
-            INSERT INTO TimeEntry (Date, ProjectId, DurationMinutes, Note)
-            VALUES (@Date, @ProjectId, @DurationMinutes, @Note);
+            INSERT INTO TimeEntry (Date, ProjectId, DurationMinutes, Note, StartTime, EndTime, BreakMinutes)
+            VALUES (@Date, @ProjectId, @DurationMinutes, @Note, @StartTime, @EndTime, @BreakMinutes);
             SELECT last_insert_rowid();
             """, entry);
         return (int)id;
@@ -49,7 +50,8 @@ public sealed class TimeEntryRepository(SqliteConnectionFactory connectionFactor
         await connection.ExecuteAsync(
             """
             UPDATE TimeEntry
-            SET Date = @Date, ProjectId = @ProjectId, DurationMinutes = @DurationMinutes, Note = @Note
+            SET Date = @Date, ProjectId = @ProjectId, DurationMinutes = @DurationMinutes, Note = @Note,
+                StartTime = @StartTime, EndTime = @EndTime, BreakMinutes = @BreakMinutes
             WHERE Id = @Id
             """, entry);
     }

@@ -10,7 +10,10 @@ public static class SqliteBackup
     public static async Task<string> SnapshotAsync(string label, CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(AppPaths.BackupsDirectory);
-        var fileName = $"{DateTime.UtcNow:yyyyMMdd-HHmmss}_{label}.db";
+        // Millisecond resolution (rather than just seconds) so two snapshots taken back-to-back
+        // - e.g. two imports in quick succession - don't collide on the same filename, which
+        // VACUUM INTO refuses to overwrite.
+        var fileName = $"{DateTime.UtcNow:yyyyMMdd-HHmmssfff}_{label}.db";
         var destination = Path.Combine(AppPaths.BackupsDirectory, fileName);
 
         await using var connection = new SqliteConnection(new SqliteConnectionStringBuilder

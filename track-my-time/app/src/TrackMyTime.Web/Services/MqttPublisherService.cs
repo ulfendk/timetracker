@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using MQTTnet;
+using TrackMyTime.Web.Models;
+using TrackMyTime.Web.Repositories;
 
 namespace TrackMyTime.Web.Services;
 
@@ -110,6 +112,7 @@ public sealed class MqttPublisherService(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var summaryService = scope.ServiceProvider.GetRequiredService<TimeSummaryService>();
+        var dayOffRepository = scope.ServiceProvider.GetRequiredService<IDayOffRepository>();
 
         var today = DateOnly.FromDateTime(DateTime.Now);
         var todaySummary = await summaryService.GetTodayAsync(today);
@@ -123,22 +126,31 @@ public sealed class MqttPublisherService(
         await PublishRetainedAsync("trackmytime/sensor/month_actual_hours/state", Round(month.ActualHours), cancellationToken);
         await PublishRetainedAsync("trackmytime/sensor/month_nominal_hours/state", Round(month.NominalHours), cancellationToken);
         await PublishRetainedAsync("trackmytime/sensor/month_delta_hours/state", Round(month.DeltaHours), cancellationToken);
+
+        var yearStart = new DateOnly(today.Year, 1, 1);
+        var yearEnd = new DateOnly(today.Year, 12, 31);
+        var sickDays = await dayOffRepository.CountByTypeAndDateRangeAsync(DayOffType.Sickness, yearStart, yearEnd);
+        var vacationDays = await dayOffRepository.CountByTypeAndDateRangeAsync(DayOffType.Vacation, yearStart, yearEnd);
+        await PublishRetainedAsync("trackmytime/sensor/sick_days_ytd/state", sickDays.ToString(CultureInfo.InvariantCulture), cancellationToken);
+        await PublishRetainedAsync("trackmytime/sensor/vacation_days_ytd/state", vacationDays.ToString(CultureInfo.InvariantCulture), cancellationToken);
     }
 
     private async Task PublishDiscoveryConfigAsync(CancellationToken cancellationToken)
     {
-        (string ObjectId, string Name, string Icon)[] sensors =
+        (string ObjectId, string Name, string Icon, string Unit)[] sensors =
         [
-            ("today_actual_hours", "TMT Today Actual Hours", "mdi:clock-check-outline"),
-            ("week_actual_hours", "TMT Week Actual Hours", "mdi:calendar-week"),
-            ("week_nominal_hours", "TMT Week Nominal Hours", "mdi:calendar-week-outline"),
-            ("week_delta_hours", "TMT Week Delta Hours", "mdi:scale-balance"),
-            ("month_actual_hours", "TMT Month Actual Hours", "mdi:calendar-month"),
-            ("month_nominal_hours", "TMT Month Nominal Hours", "mdi:calendar-month-outline"),
-            ("month_delta_hours", "TMT Month Delta Hours", "mdi:scale-balance"),
+            ("today_actual_hours", "TMT Today Actual Hours", "mdi:clock-check-outline", "h"),
+            ("week_actual_hours", "TMT Week Actual Hours", "mdi:calendar-week", "h"),
+            ("week_nominal_hours", "TMT Week Nominal Hours", "mdi:calendar-week-outline", "h"),
+            ("week_delta_hours", "TMT Week Delta Hours", "mdi:scale-balance", "h"),
+            ("month_actual_hours", "TMT Month Actual Hours", "mdi:calendar-month", "h"),
+            ("month_nominal_hours", "TMT Month Nominal Hours", "mdi:calendar-month-outline", "h"),
+            ("month_delta_hours", "TMT Month Delta Hours", "mdi:scale-balance", "h"),
+            ("sick_days_ytd", "TMT Sick Days (YTD)", "mdi:emoticon-sick-outline", "d"),
+            ("vacation_days_ytd", "TMT Vacation Days (YTD)", "mdi:beach", "d"),
         ];
 
-        foreach (var (objectId, name, icon) in sensors)
+        foreach (var (objectId, name, icon, unit) in sensors)
         {
             var config = new
             {
@@ -146,7 +158,7 @@ public sealed class MqttPublisherService(
                 unique_id = $"{DeviceId}_{objectId}",
                 state_topic = $"trackmytime/sensor/{objectId}/state",
                 availability_topic = StatusTopic,
-                unit_of_measurement = "h",
+                unit_of_measurement = unit,
                 icon,
                 device = new
                 {

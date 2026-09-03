@@ -1,0 +1,83 @@
+@page "/distribution"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Models
+@using TrackMyTime.Web.Repositories
+@using TrackMyTime.Web.Services
+@inject ITimeEntryRepository TimeEntryRepository
+@inject IDayOffRepository DayOffRepository
+@inject INominalHoursRepository NominalHoursRepository
+
+<MudText Typo="Typo.h4" GutterBottom="true">Distribution</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Actual vs. nominal hours per weekday — e.g. whether you consistently work more on some days
+    than others.
+</MudText>
+
+<MudButtonGroup Class="mb-4">
+    <MudButton OnClick="@(() => SetScope(DistributionScope.Week))" Variant="@(_scope == DistributionScope.Week ? Variant.Filled : Variant.Outlined)">Week</MudButton>
+    <MudButton OnClick="@(() => SetScope(DistributionScope.Month))" Variant="@(_scope == DistributionScope.Month ? Variant.Filled : Variant.Outlined)">Month</MudButton>
+</MudButtonGroup>
+
+<MudButtonGroup Class="mb-4">
+    <MudButton OnClick="@(() => ChangeAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">Previous</MudButton>
+    <MudButton OnClick="@(() => ChangeAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">Next</MudButton>
+</MudButtonGroup>
+
+@if (_series is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudText Typo="Typo.subtitle1" GutterBottom="true">@_from.ToString("d MMM") – @_to.ToString("d MMM yyyy")</MudText>
+        <MudChart T="double" ChartType="ChartType.Bar" ChartSeries="@_series" ChartLabels="@_labels" />
+    </MudPaper>
+}
+
+@code {
+    private enum DistributionScope { Week, Month }
+
+    private DistributionScope _scope = DistributionScope.Week;
+    private DateOnly _anchor = DateOnly.FromDateTime(DateTime.Now);
+    private DateOnly _from;
+    private DateOnly _to;
+    private List<ChartSeries<double>>? _series;
+    private readonly string[] _labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task SetScope(DistributionScope scope)
+    {
+        _scope = scope;
+        await LoadAsync();
+    }
+
+    private async Task ChangeAsync(int steps)
+    {
+        _anchor = _scope == DistributionScope.Week ? _anchor.AddDays(7 * steps) : _anchor.AddMonths(steps);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        (_from, _to) = _scope == DistributionScope.Week
+            ? DateRanges.WeekContaining(_anchor)
+            : DateRanges.MonthContaining(_anchor);
+
+        var entriesWithNames = await TimeEntryRepository.GetByDateRangeAsync(_from, _to);
+        var entries = entriesWithNames
+            .Select(e => new TimeEntry { Id = e.Id, Date = e.Date, ProjectId = e.ProjectId, DurationMinutes = e.DurationMinutes })
+            .ToList();
+        var daysOff = await DayOffRepository.GetByDateRangeAsync(_from, _to);
+        var settings = await NominalHoursRepository.GetAllAsync();
+
+        var byWeekday = NominalHoursCalculator.SummarizeByWeekday(_from, _to, settings, daysOff, entries);
+
+        _series =
+        [
+            new ChartSeries<double> { Name = "Actual", Data = byWeekday.Select(w => (double)w.ActualHours).ToArray() },
+            new ChartSeries<double> { Name = "Nominal", Data = byWeekday.Select(w => (double)w.NominalHours).ToArray() },
+        ];
+    }
+}

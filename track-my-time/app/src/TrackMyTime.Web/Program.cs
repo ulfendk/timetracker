@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using MudBlazor.Services;
 using TrackMyTime.Web.Components;
@@ -32,6 +33,7 @@ builder.Services.AddScoped<ITimeEntryRepository, TimeEntryRepository>();
 builder.Services.AddScoped<IDayOffRepository, DayOffRepository>();
 builder.Services.AddScoped<INominalHoursRepository, NominalHoursRepository>();
 builder.Services.AddScoped<TimeSummaryService>();
+builder.Services.AddScoped<ExportImportService>();
 
 builder.Services.AddHttpClient<HomeAssistantSupervisorClient>();
 builder.Services.AddSingleton<MqttPublisherService>();
@@ -72,5 +74,14 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Blazor Server can't trigger a browser file download from C# alone, so exporting data is a
+// plain GET endpoint the "Data" page links to rather than a server-side interaction.
+app.MapGet("/api/export", async (ExportImportService exportImportService) =>
+{
+    var document = await exportImportService.ExportAsync();
+    var json = JsonSerializer.SerializeToUtf8Bytes(document, new JsonSerializerOptions { WriteIndented = true });
+    return Results.File(json, "application/json", $"trackmytime-export-{DateTime.UtcNow:yyyyMMdd}.json");
+});
 
 app.Run();

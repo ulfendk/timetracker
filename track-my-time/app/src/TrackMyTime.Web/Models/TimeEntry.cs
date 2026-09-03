@@ -10,6 +10,13 @@ public sealed class TimeEntry
     public int ProjectId { get; set; }
     public int DurationMinutes { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Entry/display metadata only - DurationMinutes stays the authoritative stored
+    /// value, computed from these at save time. Null on entries logged before this existed, or
+    /// created via plain duration entry (e.g. import); those display as duration-only.</summary>
+    public TimeOnly? StartTime { get; set; }
+    public TimeOnly? EndTime { get; set; }
+    public int? BreakMinutes { get; set; }
 }
 
 /// <summary>A <see cref="TimeEntry"/> joined with its project/client names, for list views.</summary>
@@ -20,6 +27,9 @@ public sealed class TimeEntryWithNames
     public int ProjectId { get; set; }
     public int DurationMinutes { get; set; }
     public string? Note { get; set; }
+    public TimeOnly? StartTime { get; set; }
+    public TimeOnly? EndTime { get; set; }
+    public int? BreakMinutes { get; set; }
     public required string ProjectName { get; set; }
     public required string ClientName { get; set; }
     public string? Color { get; set; }

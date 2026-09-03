@@ -93,4 +93,40 @@ public class NominalHoursCalculatorTests
 
         Assert.Equal(0m, summary.NominalHours);
     }
+
+    [Fact]
+    public void SummarizeByWeekday_SplitsHoursIntoCorrectWeekdayBuckets()
+    {
+        // Monday 2026-09-07 through Sunday 2026-09-13.
+        var entries = new List<TimeEntry>
+        {
+            new() { Date = new DateOnly(2026, 9, 7), DurationMinutes = 8 * 60 },  // Monday
+            new() { Date = new DateOnly(2026, 9, 9), DurationMinutes = 6 * 60 },  // Wednesday
+        };
+
+        var byWeekday = NominalHoursCalculator.SummarizeByWeekday(
+            new DateOnly(2026, 9, 7), new DateOnly(2026, 9, 13), StandardWeek, [], entries);
+
+        Assert.Equal(7, byWeekday.Count);
+        Assert.Equal(DayOfWeek.Monday, byWeekday[0].DayOfWeek);
+        Assert.Equal(8m, byWeekday[0].ActualHours);
+        Assert.Equal(DayOfWeek.Wednesday, byWeekday[2].DayOfWeek);
+        Assert.Equal(6m, byWeekday[2].ActualHours);
+        Assert.Equal(DayOfWeek.Sunday, byWeekday[6].DayOfWeek);
+        Assert.Equal(0m, byWeekday[6].ActualHours);
+    }
+
+    [Fact]
+    public void SummarizeByWeekday_ExcludesWeekendsAndDaysOffFromNominal()
+    {
+        var daysOff = new List<DayOff> { new() { Date = new DateOnly(2026, 9, 8) } }; // Tuesday
+
+        var byWeekday = NominalHoursCalculator.SummarizeByWeekday(
+            new DateOnly(2026, 9, 7), new DateOnly(2026, 9, 13), StandardWeek, daysOff, []);
+
+        Assert.Equal(7.5m, byWeekday.Single(w => w.DayOfWeek == DayOfWeek.Monday).NominalHours);
+        Assert.Equal(0m, byWeekday.Single(w => w.DayOfWeek == DayOfWeek.Tuesday).NominalHours);
+        Assert.Equal(0m, byWeekday.Single(w => w.DayOfWeek == DayOfWeek.Saturday).NominalHours);
+        Assert.Equal(0m, byWeekday.Single(w => w.DayOfWeek == DayOfWeek.Sunday).NominalHours);
+    }
 }

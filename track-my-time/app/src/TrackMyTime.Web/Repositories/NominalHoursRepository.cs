@@ -24,4 +24,18 @@ public sealed class NominalHoursRepository(SqliteConnectionFactory connectionFac
             """, setting);
         return (int)id;
     }
+
+    public async Task UpdateAsync(NominalHoursSetting setting)
+    {
+        using var connection = connectionFactory.Open();
+        await connection.ExecuteAsync(
+            "UPDATE NominalHoursSetting SET EffectiveFrom = @EffectiveFrom, WeeklyHours = @WeeklyHours WHERE Id = @Id",
+            setting);
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        using var connection = connectionFactory.Open();
+        await connection.ExecuteAsync("DELETE FROM NominalHoursSetting WHERE Id = @id", new { id });
+    }
 }

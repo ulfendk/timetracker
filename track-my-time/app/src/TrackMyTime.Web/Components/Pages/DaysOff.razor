@@ -1,0 +1,143 @@
+@page "/days-off"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Models
+@using TrackMyTime.Web.Repositories
+@using TrackMyTime.Web.Services
+@inject IDayOffRepository DayOffRepository
+@inject MqttPublisherService MqttPublisher
+
+<MudText Typo="Typo.h4" GutterBottom="true">Days off</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Plan or record a day off for any date — past or future — with its type. For a quick "mark
+    today as off" toggle, use the Today page instead.
+</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudDatePicker Label="Date" @bind-Date="_newDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect T="DayOffType?" Label="Type" @bind-Value="_newType">
+                @foreach (var type in Enum.GetValues<DayOffType>())
+                {
+                    <MudSelectItem T="DayOffType?" Value="@type">@type</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudTextField Label="Note (optional)" @bind-Value="_newNote" Immediate="true" />
+        </MudItem>
+        <MudItem xs="12" sm="3" Class="d-flex align-center ga-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(_newDate is null)">
+                @(_editingId is null ? "Add" : "Save changes")
+            </MudButton>
+            @if (_editingId is not null)
+            {
+                <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+            }
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_days is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_days.Count == 0)
+{
+    <MudText Typo="Typo.body2" Color="Color.Secondary">No days off recorded nearby.</MudText>
+}
+else
+{
+    <MudTable Items="_days" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Date</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Note</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Date.ToString("ddd d MMM yyyy")</MudTd>
+            <MudTd>@(context.Type?.ToString() ?? "—")</MudTd>
+            <MudTd>@context.Note</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteAsync(context.Id))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<DayOff>? _days;
+    private DateTime? _newDate = DateTime.Today;
+    private DayOffType? _newType = DayOffType.Vacation;
+    private string? _newNote;
+    private int? _editingId;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var from = DateOnly.FromDateTime(DateTime.Now).AddDays(-90);
+        var to = DateOnly.FromDateTime(DateTime.Now).AddDays(365);
+        _days = (await DayOffRepository.GetByDateRangeAsync(from, to)).OrderBy(d => d.Date).ToList();
+    }
+
+    private void StartEdit(DayOff dayOff)
+    {
+        _editingId = dayOff.Id;
+        _newDate = dayOff.Date.ToDateTime(TimeOnly.MinValue);
+        _newType = dayOff.Type;
+        _newNote = dayOff.Note;
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _newDate = DateTime.Today;
+        _newType = DayOffType.Vacation;
+        _newNote = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_newDate is null)
+        {
+            return;
+        }
+
+        var dayOff = new DayOff
+        {
+            Id = _editingId ?? 0,
+            Date = DateOnly.FromDateTime(_newDate.Value),
+            Type = _newType,
+            Note = string.IsNullOrWhiteSpace(_newNote) ? null : _newNote,
+        };
+
+        if (_editingId is null)
+        {
+            await DayOffRepository.CreateAsync(dayOff);
+        }
+        else
+        {
+            await DayOffRepository.UpdateAsync(dayOff);
+        }
+
+        CancelEdit();
+        MqttPublisher.RequestRefresh();
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        await DayOffRepository.DeleteAsync(id);
+        if (_editingId == id)
+        {
+            CancelEdit();
+        }
+        MqttPublisher.RequestRefresh();
+        await LoadAsync();
+    }
+}

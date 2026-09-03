@@ -77,3 +77,25 @@ it's just never been used yet. Once ready: push a tag matching `config.yaml`'s `
 the resulting `ghcr.io/<owner>/timetracker/track-my-time` package public, then add `image:` back
 - steps are already spelled out in `README.md`'s "Releasing" section. Worth doing once the app
 has settled down some, since local builds are slow on the HA Blue's SoC.
+
+## 11. Expose statistics to HA
+
+From HA, a dashboard with Sick days and vacation days for the year would be nice to have, so the
+data should be exported to MQTT if they are not already.
+
+## 12. Equal distribution of nominal hours
+
+I would like graphs showing my distribution of nominal hours vs actual over
+a week / month shold also be deducible (e.g. have a graph per weekday, showing whether I work more
+or less on Mon, Tue, Wed, etc.)
+
+## 12. Better support for types of days off
+
+Days off should support:
+- Sickness
+- Vacation
+- Official holiday
+- Forced time off
+
+## 13. Add screenshots to the repository for presentation on Github and in Home Assistant. Also
+include the logo in HA.

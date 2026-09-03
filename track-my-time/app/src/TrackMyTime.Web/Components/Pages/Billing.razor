@@ -1,0 +1,88 @@
+@page "/billing"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Repositories
+@using TrackMyTime.Web.Services
+@inject ITimeEntryRepository TimeEntryRepository
+
+<MudText Typo="Typo.h4" GutterBottom="true">Billing</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+    Hours logged per client and project for a period — no rates, just how much to bill for.
+</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="From" @bind-Date="_fromDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="To" @bind-Date="_toDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex align-center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadAsync"
+                       Disabled="@(_fromDate is null || _toDate is null)">
+                Generate
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_rows is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_rows.Count == 0)
+{
+    <MudText Typo="Typo.body2" Color="Color.Secondary">Nothing logged in this period.</MudText>
+}
+else
+{
+    <MudTable Items="_rows" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Client</MudTh>
+            <MudTh>Project</MudTh>
+            <MudTh>Hours</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Client</MudTd>
+            <MudTd>@context.Project</MudTd>
+            <MudTd>@context.Hours.ToString("0.##")</MudTd>
+        </RowTemplate>
+        <FooterContent>
+            <MudTd Class="mud-table-cell-custom-group">Total</MudTd>
+            <MudTd></MudTd>
+            <MudTd>@_rows.Sum(r => r.Hours).ToString("0.##")</MudTd>
+        </FooterContent>
+    </MudTable>
+}
+
+@code {
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+    private List<(string Client, string Project, decimal Hours)>? _rows;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (from, to) = DateRanges.MonthContaining(DateOnly.FromDateTime(DateTime.Now));
+        _fromDate = from.ToDateTime(TimeOnly.MinValue);
+        _toDate = to.ToDateTime(TimeOnly.MinValue);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_fromDate is null || _toDate is null)
+        {
+            return;
+        }
+
+        var from = DateOnly.FromDateTime(_fromDate.Value);
+        var to = DateOnly.FromDateTime(_toDate.Value);
+        var entries = await TimeEntryRepository.GetByDateRangeAsync(from, to);
+
+        _rows = entries
+            .GroupBy(e => (e.ClientName, e.ProjectName))
+            .Select(g => (Client: g.Key.ClientName, Project: g.Key.ProjectName, Hours: g.Sum(e => e.DurationMinutes) / 60m))
+            .OrderBy(r => r.Client).ThenBy(r => r.Project)
+            .ToList();
+    }
+}

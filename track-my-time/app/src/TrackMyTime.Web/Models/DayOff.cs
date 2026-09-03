@@ -8,4 +8,8 @@ public sealed class DayOff
     public int Id { get; set; }
     public DateOnly Date { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Null means "unspecified" - existing rows predate this field and are never
+    /// backfilled with a guessed category.</summary>
+    public DayOffType? Type { get; set; }
 }
