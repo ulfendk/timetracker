@@ -74,7 +74,6 @@ public sealed class MqttPublisherService(
             return;
         }
 
-        using var timer = new PeriodicTimer(RefreshInterval);
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -86,10 +85,25 @@ public sealed class MqttPublisherService(
                 logger.LogWarning(ex, "Failed to publish state to MQTT");
             }
 
-            var timerTick = timer.WaitForNextTickAsync(stoppingToken).AsTask();
-            var refreshRequested = _refreshRequested.WaitAsync(stoppingToken);
-            await Task.WhenAny(timerTick, refreshRequested);
+            await WaitForNextRefreshAsync(RefreshInterval, _refreshRequested, stoppingToken);
         }
+    }
+
+    /// <summary>Waits for whichever comes first: the periodic interval, or an on-demand
+    /// <see cref="RequestRefresh"/> call. Pulled out as its own testable method because the
+    /// obvious alternative - PeriodicTimer raced via Task.WhenAny against the refresh signal -
+    /// is broken: PeriodicTimer only supports one outstanding WaitForNextTickAsync call at a
+    /// time, and Task.WhenAny abandons whichever side loses the race without awaiting it out.
+    /// If the refresh signal wins, the previous timer wait is left dangling, and starting a
+    /// second one on the same PeriodicTimer next iteration throws InvalidOperationException
+    /// (this shipped and crashed the whole host under a real broker - see
+    /// MqttPublisherServiceTests.WaitForNextRefreshAsync_SurvivesRapidRefreshRequests). A fresh
+    /// Task.Delay per call has no such restriction and is safe to abandon.</summary>
+    internal static async Task WaitForNextRefreshAsync(TimeSpan interval, SemaphoreSlim refreshRequested, CancellationToken cancellationToken)
+    {
+        var delay = Task.Delay(interval, cancellationToken);
+        var refresh = refreshRequested.WaitAsync(cancellationToken);
+        await Task.WhenAny(delay, refresh);
     }
 
     private async Task PublishStateAsync(CancellationToken cancellationToken)
