@@ -1,0 +1,87 @@
+@page "/month"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Models
+@using TrackMyTime.Web.Repositories
+@using TrackMyTime.Web.Services
+@inject ITimeEntryRepository TimeEntryRepository
+@inject TimeSummaryService SummaryService
+
+<MudText Typo="Typo.h4" GutterBottom="true">@_anchor.ToString("MMMM yyyy")</MudText>
+
+<MudButtonGroup Class="mb-4">
+    <MudButton OnClick="@(() => ChangeMonthAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">Previous</MudButton>
+    <MudButton OnClick="@(() => ChangeMonthAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">Next</MudButton>
+</MudButtonGroup>
+
+@if (_summary is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 mb-4" Elevation="2">
+                <MudText Typo="Typo.subtitle1">
+                    Actual @_summary.ActualHours.ToString("0.##") h of @_summary.NominalHours.ToString("0.##") h nominal
+                    (weekend: @_summary.ActualWeekendHours.ToString("0.##") h, days off: @_summary.DaysOff.Count)
+                </MudText>
+                <MudProgressLinear Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)"
+                                    Value="@ProgressPercent" Class="my-2" Size="Size.Large" />
+                <MudText Typo="Typo.body2" Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)">
+                    @(_summary.DeltaHours >= 0 ? "Ahead by " : "Behind by ") @Math.Abs(_summary.DeltaHours).ToString("0.##") h
+                </MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4 mb-4" Elevation="2">
+                <MudText Typo="Typo.subtitle1" GutterBottom="true">By client</MudText>
+                @if (_byClient.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Nothing logged this month.</MudText>
+                }
+                else
+                {
+                    <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="@_byClientSeries" ChartLabels="@_byClientLabels" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private DateOnly _anchor = DateOnly.FromDateTime(DateTime.Now);
+    private PeriodSummary? _summary;
+    private List<(string Client, decimal Hours)> _byClient = [];
+    private List<ChartSeries<double>> _byClientSeries = [];
+    private string[] _byClientLabels = [];
+
+    private double ProgressPercent => _summary is { NominalHours: > 0 }
+        ? (double)Math.Min(100m, _summary.ActualHours / _summary.NominalHours * 100m)
+        : 0;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task ChangeMonthAsync(int months)
+    {
+        _anchor = _anchor.AddMonths(months);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _summary = await SummaryService.GetMonthAsync(_anchor);
+
+        var (from, to) = DateRanges.MonthContaining(_anchor);
+        var entries = await TimeEntryRepository.GetByDateRangeAsync(from, to);
+        _byClient = entries
+            .GroupBy(e => e.ClientName)
+            .Select(g => (Client: g.Key, Hours: g.Sum(e => e.DurationMinutes) / 60m))
+            .OrderByDescending(x => x.Hours)
+            .ToList();
+        // A pie/donut chart in MudBlazor is one series whose Data has one point per label -
+        // not one series per client.
+        _byClientSeries = [new ChartSeries<double> { Name = "Hours", Data = _byClient.Select(x => (double)x.Hours).ToArray() }];
+        _byClientLabels = _byClient.Select(x => x.Client).ToArray();
+    }
+}

@@ -1,0 +1,39 @@
+@using Microsoft.AspNetCore.Http
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Track My Time</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <base href="@BaseHref" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["TrackMyTime.Web.styles.css"]" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+</body>
+
+</html>
+
+@code {
+    // Home Assistant's ingress proxy fronts this app under a path that can change across
+    // restarts (see the X-Ingress-Path handling in Program.cs, which sets PathBase). Deriving
+    // <base href> from PathBase here - rather than hardcoding "/" - is what lets every generated
+    // link, static asset, and the Blazor Server circuit resolve correctly under that prefix.
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private string BaseHref => string.IsNullOrEmpty(HttpContext.Request.PathBase)
+        ? "/"
+        : $"{HttpContext.Request.PathBase}/";
+}

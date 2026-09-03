@@ -1,2 +1,70 @@
-# timetracker
-Time tracking application built to run through Home Assistant's add-on functionality, to make it easily accessible, yet safe to have public
+# Track My Time (TMT)
+
+Time tracking for consultants, built to run as a Home Assistant app (add-on) - track hours per
+day, client, and project; compare actual hours against your nominal weekly hours by week and by
+month; and see the key figures on your own HA dashboards.
+
+See [`track-my-time/DOCS.md`](track-my-time/DOCS.md) for what the app does and how to use it.
+The rest of this file is about developing it.
+
+## Repository layout
+
+- `track-my-time/` - the Home Assistant app: `config.yaml`, `Dockerfile`, docs, icon/logo, and
+  the `app/` subfolder containing the actual .NET solution (`app/src/TrackMyTime.Web`, the
+  Blazor Server app; `app/src/TrackMyTime.Tests`, its test suite). The app's own source has to
+  live inside the app folder because Docker's build context can't reach outside it.
+- `repository.yaml` - marks this repo as a Home Assistant apps repository.
+- `.devcontainer.json` / `.vscode/tasks.json` - the local dev environment below.
+
+## Local development
+
+### Fast inner loop: `dotnet run`
+
+For UI/data logic changes, run the app directly against a local SQLite file - no Home Assistant
+needed:
+
+```sh
+cd track-my-time/app/src/TrackMyTime.Web
+dotnet run
+```
+
+Run the tests with `dotnet test track-my-time/app/TrackMyTime.slnx` (or from within
+`track-my-time/app`).
+
+### Full loop: Supervisor dev container
+
+Ingress path handling, MQTT discovery, and backups can only really be verified against a real
+Supervisor + Home Assistant instance. This repo is set up for Home Assistant's official
+dev container, which gives you exactly that with no physical hardware:
+
+**Prerequisites:** VS Code, Docker (or Podman with its Docker-compatible socket), the Dev
+Containers extension.
+
+1. Open this folder in VS Code, then **Rebuild and Reopen in Container** when prompted.
+2. Run the **Start Home Assistant** task (Terminal → Run Task) - it bootstraps Supervisor and
+   Home Assistant inside the container.
+3. Open <http://localhost:7123/> and complete onboarding. Because `track-my-time/` sits at the
+   repo root, it shows up automatically under **Settings → Add-ons → Local add-ons** (also
+   labelled "Local apps" in newer Home Assistant versions) - install it there.
+4. Iterate: edit code, then run the **Rebuild and Start App** task (pick `track-my-time` when
+   prompted) to rebuild the container from the Dockerfile and tail its logs. This is also how
+   you force a local Dockerfile build even after `config.yaml` has a published `image:` set.
+5. For MQTT testing, also install the Mosquitto broker app inside the dev container.
+
+Reserve an install on a real HA Blue for a final performance/footprint check before calling a
+change done - the dev container won't reflect the SoC's real ARM64 performance.
+
+### Building the container image directly
+
+Outside the dev container, you can build (and, with Podman, run) the image directly:
+
+```sh
+cd track-my-time
+podman build -t track-my-time:local .
+```
+
+## Releasing
+
+`.github/workflows/build.yml` publishes a multi-arch image to GHCR whenever a `vX.Y.Z` git tag
+is pushed. Bump `version` in `track-my-time/config.yaml` (and add a `CHANGELOG.md` entry) to
+match before tagging - Supervisor pulls `image:version`, so the two need to agree.

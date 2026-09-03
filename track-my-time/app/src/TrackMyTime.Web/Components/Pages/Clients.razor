@@ -1,0 +1,70 @@
+@page "/clients"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Models
+@using TrackMyTime.Web.Repositories
+@inject IClientRepository ClientRepository
+
+<MudText Typo="Typo.h4" GutterBottom="true">Clients</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudGrid>
+        <MudItem xs="12" sm="8">
+            <MudTextField @bind-Value="_newName" Label="New client name" Immediate="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex align-center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync" Disabled="@string.IsNullOrWhiteSpace(_newName)">
+                Add client
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_clients is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="_clients" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@(context.IsActive ? "Active" : "Archived")</MudTd>
+            <MudTd>
+                <MudButton Size="Size.Small" OnClick="@(() => ToggleActiveAsync(context))">
+                    @(context.IsActive ? "Archive" : "Restore")
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<Client>? _clients;
+    private string _newName = "";
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _clients = (await ClientRepository.GetAllAsync(includeInactive: true)).ToList();
+
+    private async Task AddAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newName))
+        {
+            return;
+        }
+        await ClientRepository.CreateAsync(new Client { Name = _newName.Trim() });
+        _newName = "";
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(Client client)
+    {
+        await ClientRepository.SetActiveAsync(client.Id, !client.IsActive);
+        await LoadAsync();
+    }
+}

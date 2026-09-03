@@ -1,0 +1,96 @@
+@page "/week"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Models
+@using TrackMyTime.Web.Repositories
+@using TrackMyTime.Web.Services
+@inject ITimeEntryRepository TimeEntryRepository
+@inject IDayOffRepository DayOffRepository
+@inject TimeSummaryService SummaryService
+
+<MudText Typo="Typo.h4" GutterBottom="true">Week of @_from.ToString("d MMM") – @_to.ToString("d MMM")</MudText>
+
+<MudButtonGroup Class="mb-4">
+    <MudButton OnClick="@(() => ChangeWeekAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">Previous</MudButton>
+    <MudButton OnClick="@(() => ChangeWeekAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">Next</MudButton>
+</MudButtonGroup>
+
+@if (_summary is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudText Typo="Typo.subtitle1">
+            Actual @_summary.ActualHours.ToString("0.##") h of @_summary.NominalHours.ToString("0.##") h nominal
+            (weekend: @_summary.ActualWeekendHours.ToString("0.##") h)
+        </MudText>
+        <MudProgressLinear Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)"
+                            Value="@ProgressPercent" Class="my-2" Size="Size.Large" />
+        <MudText Typo="Typo.body2" Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)">
+            @(_summary.DeltaHours >= 0 ? "Ahead by " : "Behind by ") @Math.Abs(_summary.DeltaHours).ToString("0.##") h
+        </MudText>
+    </MudPaper>
+
+    <MudTable Items="_days" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Day</MudTh>
+            <MudTh>Hours</MudTh>
+            <MudTh>Off</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                @context.Date.ToString("ddd d MMM")
+                @if (NominalHoursCalculator.IsWeekend(context.Date))
+                {
+                    <MudChip T="string" Size="Size.Small" Class="ml-2">weekend</MudChip>
+                }
+            </MudTd>
+            <MudTd>@context.Hours.ToString("0.##")</MudTd>
+            <MudTd>@(context.IsDayOff ? "✓" : "")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private DateOnly _from;
+    private DateOnly _to;
+    private PeriodSummary? _summary;
+    private List<DayRow> _days = [];
+
+    private double ProgressPercent => _summary is { NominalHours: > 0 }
+        ? (double)Math.Min(100m, _summary.ActualHours / _summary.NominalHours * 100m)
+        : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var (from, to) = DateRanges.WeekContaining(DateOnly.FromDateTime(DateTime.Now));
+        _from = from;
+        _to = to;
+        await LoadAsync();
+    }
+
+    private async Task ChangeWeekAsync(int weeks)
+    {
+        _from = _from.AddDays(7 * weeks);
+        _to = _to.AddDays(7 * weeks);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _summary = await SummaryService.GetWeekAsync(_from);
+
+        var entries = await TimeEntryRepository.GetByDateRangeAsync(_from, _to);
+        var daysOff = (await DayOffRepository.GetByDateRangeAsync(_from, _to)).Select(d => d.Date).ToHashSet();
+        var hoursByDay = entries.GroupBy(e => e.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.DurationMinutes) / 60m);
+
+        _days = [];
+        for (var day = _from; day <= _to; day = day.AddDays(1))
+        {
+            _days.Add(new DayRow(day, hoursByDay.GetValueOrDefault(day), daysOff.Contains(day)));
+        }
+    }
+
+    private sealed record DayRow(DateOnly Date, decimal Hours, bool IsDayOff);
+}

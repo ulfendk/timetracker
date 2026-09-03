@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Local Track My Time data (from `TMT_DATA_DIR` during local `dotnet run`)
+.local-data/
+
+# playwright-cli scratch output
+.playwright-cli/
+
 # User-specific files
 *.rsuser
 *.suo
@@ -42,6 +48,7 @@ obj/x86/
 [Aa][Rr][Mm]64/
 [Aa][Rr][Mm]64[Ee][Cc]/
 bld/
+[Bb]in/
 [Oo]bj/
 [Oo]ut/
 [Ll]og/

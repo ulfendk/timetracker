@@ -1,0 +1,78 @@
+@inherits LayoutComponentBase
+@using MudBlazor.Services
+@implements IAsyncDisposable
+@inject IBrowserViewportService BrowserViewportService
+
+<MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2">🧨 Track My Time</MudText>
+        <MudSpacer />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="1"
+               Variant="@DrawerVariant.Responsive" Breakpoint="Breakpoint.Md">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-4 pb-8">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    // Loosely echoes Home Assistant's own Material palette (its default primary blue) so the
+    // app doesn't feel like a foreign tool bolted onto an HA dashboard.
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new MudBlazor.PaletteLight
+        {
+            Primary = "#03A9F4",
+            AppbarBackground = "#03A9F4",
+            // MudBlazor's default Secondary is a bright pink - overridden here to a plain gray,
+            // since we only use Color.Secondary for muted helper text, never as an accent.
+            Secondary = "#616161",
+        },
+        PaletteDark = new MudBlazor.PaletteDark
+        {
+            Primary = "#03A9F4",
+            Secondary = "#9E9E9E",
+        },
+    };
+
+    // Full drawer, always open, on desktop (Md and up); a fully-hidden off-canvas overlay
+    // toggled by the burger button below that ("Responsive" = Persistent above the breakpoint,
+    // Temporary below it). MudDrawer's own Breakpoint parameter only affects how it BEHAVES
+    // (persistent vs. overlay), not its initial Open state - without this subscription it stays
+    // fully expanded (and thus covering the page) on first load on a phone, so the actual
+    // open/closed default has to be driven from the real viewport size explicitly.
+    private bool _drawerOpen = true;
+    private readonly Guid _viewportSubscriptionId = Guid.NewGuid();
+
+    protected override async Task OnInitializedAsync() =>
+        await BrowserViewportService.SubscribeAsync(_viewportSubscriptionId, OnResizedAsync, new ResizeOptions(), fireImmediately: true);
+
+    private async Task OnResizedAsync(BrowserViewportEventArgs args)
+    {
+        // Note the argument order: (rangeToTestAgainst, actualCurrentBreakpoint) - passing
+        // these the other way round silently answers a different question and always returns
+        // false for anything at or above Md.
+        _drawerOpen = await BrowserViewportService.IsBreakpointWithinReferenceSizeAsync(Breakpoint.MdAndUp, args.Breakpoint);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    public async ValueTask DisposeAsync() => await BrowserViewportService.UnsubscribeAsync(_viewportSubscriptionId);
+}

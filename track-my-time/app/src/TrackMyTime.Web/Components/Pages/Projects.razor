@@ -1,0 +1,99 @@
+@page "/projects"
+@rendermode InteractiveServer
+@using TrackMyTime.Web.Models
+@using TrackMyTime.Web.Repositories
+@inject IProjectRepository ProjectRepository
+@inject IClientRepository ClientRepository
+
+<MudText Typo="Typo.h4" GutterBottom="true">Projects</MudText>
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    @if (_clients is { Count: 0 })
+    {
+        <MudAlert Severity="Severity.Info">Add a client first.</MudAlert>
+    }
+    else if (_clients is not null)
+    {
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <MudSelect T="int" Label="Client" @bind-Value="_newClientId">
+                    @foreach (var client in _clients)
+                    {
+                        <MudSelectItem T="int" Value="@client.Id">@client.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField @bind-Value="_newName" Label="New project name" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4" Class="d-flex align-center">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAsync"
+                           Disabled="@(string.IsNullOrWhiteSpace(_newName) || _newClientId == 0)">
+                    Add project
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    }
+</MudPaper>
+
+@if (_projects is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="_projects" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh>Client</MudTh>
+            <MudTh>Project</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.ClientName</MudTd>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@(context.IsActive ? "Active" : "Archived")</MudTd>
+            <MudTd>
+                <MudButton Size="Size.Small" OnClick="@(() => ToggleActiveAsync(context))">
+                    @(context.IsActive ? "Archive" : "Restore")
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<Client>? _clients;
+    private List<ProjectWithClient>? _projects;
+    private string _newName = "";
+    private int _newClientId;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _clients = (await ClientRepository.GetAllAsync()).ToList();
+        _projects = (await ProjectRepository.GetAllAsync(includeInactive: true)).ToList();
+        if (_newClientId == 0 && _clients.Count > 0)
+        {
+            _newClientId = _clients[0].Id;
+        }
+    }
+
+    private async Task AddAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newName) || _newClientId == 0)
+        {
+            return;
+        }
+        await ProjectRepository.CreateAsync(new Project { ClientId = _newClientId, Name = _newName.Trim() });
+        _newName = "";
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(ProjectWithClient project)
+    {
+        await ProjectRepository.SetActiveAsync(project.Id, !project.IsActive);
+        await LoadAsync();
+    }
+}
