@@ -65,6 +65,17 @@ podman build -t track-my-time:local .
 
 ## Releasing
 
-`.github/workflows/build.yml` publishes a multi-arch image to GHCR whenever a `vX.Y.Z` git tag
-is pushed. Bump `version` in `track-my-time/config.yaml` (and add a `CHANGELOG.md` entry) to
-match before tagging - Supervisor pulls `image:version`, so the two need to agree.
+`track-my-time/config.yaml` has no `image:` field by default, so Supervisor always builds the
+app from the `Dockerfile` locally - this is what you want during development, since once
+`image:` IS set, Supervisor always tries to *pull* that tag and does **not** fall back to a
+local build if the pull fails.
+
+To switch to prebuilt images once you're happy with a release:
+
+1. Bump `version` in `track-my-time/config.yaml` (and add a `CHANGELOG.md` entry).
+2. Push a matching `vX.Y.Z` git tag - `.github/workflows/build.yml` builds and pushes a
+   multi-arch image to GHCR.
+3. In GitHub, make the resulting `ghcr.io/<owner>/timetracker/track-my-time` package public
+   (Packages tab → package settings → Change visibility) - Supervisor pulls anonymously, so a
+   private package 403s.
+4. Add `image: ghcr.io/<owner>/timetracker/track-my-time` back to `config.yaml` and push.
