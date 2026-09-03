@@ -74,17 +74,22 @@ podman build -t track-my-time:local .
 
 ## Releasing
 
-`track-my-time/config.yaml` has no `image:` field by default, so Supervisor always builds the
-app from the `Dockerfile` locally - this is what you want during development, since once
-`image:` IS set, Supervisor always tries to *pull* that tag and does **not** fall back to a
-local build if the pull fails.
+`track-my-time/config.yaml` has an `image:` field pointing at
+`ghcr.io/ulfendk/timetracker/track-my-time` (no tag suffix, so it resolves to `:latest`), so
+Supervisor pulls the published image instead of building from the `Dockerfile`. For local
+development, use the dev container's "Rebuild and Start App" task, or `podman build` directly
+(above) - both force a local build regardless of this field, since once `image:` is set Supervisor
+itself always tries to *pull* that tag and does **not** fall back to a local build if the pull
+fails.
 
-To switch to prebuilt images once you're happy with a release:
+To publish a new release:
 
 1. Bump `version` in `track-my-time/config.yaml` (and add a `CHANGELOG.md` entry).
 2. Push a matching `vX.Y.Z` git tag - `.github/workflows/build.yml` builds and pushes a
-   multi-arch image to GHCR.
-3. In GitHub, make the resulting `ghcr.io/<owner>/timetracker/track-my-time` package public
-   (Packages tab → package settings → Change visibility) - Supervisor pulls anonymously, so a
-   private package 403s.
-4. Add `image: ghcr.io/<owner>/timetracker/track-my-time` back to `config.yaml` and push.
+   multi-arch image to GHCR, tagged both `X.Y.Z` and `latest`.
+
+That's it - the package is already public and `config.yaml` already points at `:latest`, so
+existing installs pick up the new version on their next Supervisor update check. (First-time setup
+only, already done: make the `ghcr.io/<owner>/timetracker/track-my-time` package public in GitHub's
+Packages tab → package settings → Change visibility, since Supervisor pulls anonymously and a
+private package 403s.)
