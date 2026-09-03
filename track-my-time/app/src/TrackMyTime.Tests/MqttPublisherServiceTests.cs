@@ -34,4 +34,38 @@ public class MqttPublisherServiceTests
                 .WaitAsync(TimeSpan.FromSeconds(5));
         }
     }
+
+    /// <summary>The reconnect backoff must double on each failure and never exceed the
+    /// configured cap, so a broker that's slow to come up (or down for an extended period) is
+    /// retried at a bounded, broker-friendly cadence rather than hammered indefinitely or left to
+    /// a fixed interval that's too slow to recover quickly from a brief blip.</summary>
+    [Fact]
+    public void NextReconnectDelay_DoublesThenCapsAtMax()
+    {
+        var maxDelay = TimeSpan.FromSeconds(60);
+        var delay = TimeSpan.FromSeconds(5);
+
+        delay = MqttPublisherService.NextReconnectDelay(delay, maxDelay);
+        Assert.Equal(TimeSpan.FromSeconds(10), delay);
+
+        delay = MqttPublisherService.NextReconnectDelay(delay, maxDelay);
+        Assert.Equal(TimeSpan.FromSeconds(20), delay);
+
+        delay = MqttPublisherService.NextReconnectDelay(delay, maxDelay);
+        Assert.Equal(TimeSpan.FromSeconds(40), delay);
+
+        delay = MqttPublisherService.NextReconnectDelay(delay, maxDelay);
+        Assert.Equal(maxDelay, delay); // 80s would exceed the cap - clamped to 60s
+
+        delay = MqttPublisherService.NextReconnectDelay(delay, maxDelay);
+        Assert.Equal(maxDelay, delay); // stays capped on further failures, doesn't keep growing
+    }
+
+    [Fact]
+    public void NextReconnectDelay_ExactlyAtCap_StaysAtCap()
+    {
+        var maxDelay = TimeSpan.FromSeconds(60);
+        var delay = MqttPublisherService.NextReconnectDelay(TimeSpan.FromSeconds(30), maxDelay);
+        Assert.Equal(maxDelay, delay);
+    }
 }

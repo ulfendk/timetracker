@@ -9,7 +9,9 @@ namespace TrackMyTime.Web.Services;
 /// <summary>Publishes today/week/month actual-vs-nominal figures to Home Assistant via MQTT
 /// Discovery, so they show up as ordinary sensor entities in any dashboard. Runs entirely
 /// best-effort: with no broker configured, or while disconnected, the app keeps working — this
-/// service just skips publishing and logs why.</summary>
+/// service just skips publishing and logs why. Connects with retry/backoff at startup (a broker
+/// not yet up when this app starts is normal, not fatal) and reconnects the same way after any
+/// mid-session drop.</summary>
 public sealed class MqttPublisherService(
     IServiceScopeFactory scopeFactory,
     HomeAssistantSupervisorClient supervisorClient,
@@ -18,11 +20,23 @@ public sealed class MqttPublisherService(
     private const string DeviceId = "trackmytime";
     private const string StatusTopic = "trackmytime/status";
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan InitialReconnectDelay = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan MaxReconnectDelay = TimeSpan.FromSeconds(60);
 
     private readonly SemaphoreSlim _refreshRequested = new(1, 1);
+    private readonly SemaphoreSlim _disconnected = new(0, 1);
+
+    // MQTTnet's IMqttClient docs prohibit calling ConnectAsync/DisconnectAsync concurrently with
+    // publish operations. Once reconnects can happen on their own loop, concurrently with the
+    // publish loop, that's a real hazard - this serializes the two operation types against each
+    // other (publish-vs-publish concurrency isn't a concern: PublishStateAsync already awaits its
+    // publishes one at a time).
+    private readonly SemaphoreSlim _clientLock = new(1, 1);
+
     private IMqttClient? _client;
 
-    /// <summary>For the Settings page's status indicator.</summary>
+    /// <summary>For the Settings page's status indicator. Reads the client's own live connection
+    /// state, so it correctly reads false for the whole span of any retry/backoff attempt.</summary>
     public bool IsConnected => _client?.IsConnected ?? false;
 
     /// <summary>Call after any change to time entries, days off, or nominal hours so the
@@ -45,37 +59,124 @@ public sealed class MqttPublisherService(
 
         var factory = new MqttClientFactory();
         _client = factory.CreateMqttClient();
+        _client.DisconnectedAsync += OnDisconnectedAsync;
 
+        var options = BuildClientOptions(mqttService.Host, mqttService.Port, mqttService.Ssl, mqttService.Username, mqttService.Password);
+
+        await ConnectWithRetryAsync(options, mqttService.Host, mqttService.Port, stoppingToken);
+
+        await Task.WhenAll(
+            PublishLoopAsync(stoppingToken),
+            ReconnectLoopAsync(options, mqttService.Host, mqttService.Port, stoppingToken));
+    }
+
+    private static MqttClientOptions BuildClientOptions(string host, int port, bool ssl, string? username, string? password)
+    {
         var optionsBuilder = new MqttClientOptionsBuilder()
             .WithClientId("track-my-time")
-            .WithTcpServer(mqttService.Host, mqttService.Port)
+            .WithTcpServer(host, port)
             .WithWillTopic(StatusTopic)
             .WithWillPayload("offline")
             .WithWillRetain(true);
 
-        if (mqttService.Ssl)
+        if (ssl)
         {
             optionsBuilder = optionsBuilder.WithTlsOptions(o => o.UseTls());
         }
-        if (!string.IsNullOrEmpty(mqttService.Username))
+        if (!string.IsNullOrEmpty(username))
         {
-            optionsBuilder = optionsBuilder.WithCredentials(mqttService.Username, mqttService.Password);
+            optionsBuilder = optionsBuilder.WithCredentials(username, password);
         }
 
+        return optionsBuilder.Build();
+    }
+
+    /// <summary>One connect attempt. On success, (re)publishes discovery configs and "online"
+    /// status - safe to repeat on every reconnect, since a retained publish with identical
+    /// payload is a no-op from Home Assistant's perspective, and this is what re-announces
+    /// entities if the broker's retained-message store was lost (restart, different instance).</summary>
+    private async Task<bool> TryConnectAsync(MqttClientOptions options, string host, int port, CancellationToken cancellationToken)
+    {
         try
         {
-            await _client.ConnectAsync(optionsBuilder.Build(), stoppingToken);
-            await PublishDiscoveryConfigAsync(stoppingToken);
-            await PublishRetainedAsync(StatusTopic, "online", stoppingToken);
-            logger.LogInformation("Connected to MQTT broker at {Host}:{Port} for Home Assistant discovery",
-                mqttService.Host, mqttService.Port);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Could not connect to the MQTT broker - MQTT publishing is disabled for this run.");
-            return;
-        }
+            await _clientLock.WaitAsync(cancellationToken);
+            try
+            {
+                await _client!.ConnectAsync(options, cancellationToken);
+            }
+            finally
+            {
+                _clientLock.Release();
+            }
 
+            await PublishDiscoveryConfigAsync(cancellationToken);
+            await PublishRetainedAsync(StatusTopic, "online", cancellationToken);
+            logger.LogInformation("Connected to MQTT broker at {Host}:{Port} for Home Assistant discovery", host, port);
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not connect to the MQTT broker at {Host}:{Port}; will retry", host, port);
+            return false;
+        }
+    }
+
+    /// <summary>Retries TryConnectAsync with exponential backoff until it succeeds or the
+    /// service is stopped. Used for both the initial connect and every reconnect after a
+    /// mid-session drop, so a broker that isn't up yet when this app starts - or goes away
+    /// temporarily later - is retried rather than given up on permanently.</summary>
+    private async Task ConnectWithRetryAsync(MqttClientOptions options, string host, int port, CancellationToken cancellationToken)
+    {
+        var delay = InitialReconnectDelay;
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            if (await TryConnectAsync(options, host, port, cancellationToken))
+            {
+                return;
+            }
+
+            await Task.Delay(delay, cancellationToken);
+            delay = NextReconnectDelay(delay, MaxReconnectDelay);
+        }
+    }
+
+    /// <summary>Computes the next reconnect delay by doubling, capped at <paramref name="maxDelay"/>.
+    /// Pulled out as its own pure, testable method for the same reason WaitForNextRefreshAsync is:
+    /// so the retry/backoff policy can be verified without a real MQTT broker.</summary>
+    internal static TimeSpan NextReconnectDelay(TimeSpan currentDelay, TimeSpan maxDelay)
+    {
+        var doubled = currentDelay * 2;
+        return doubled < maxDelay ? doubled : maxDelay;
+    }
+
+    private Task OnDisconnectedAsync(MqttClientDisconnectedEventArgs args)
+    {
+        // ClientWasConnected is false for a failed *initial* connect attempt (MQTTnet raises
+        // DisconnectedAsync there too) - that case is already handled by ConnectWithRetryAsync's
+        // own retry loop. Only a drop after a successful connect should wake the reconnect loop.
+        if (args.ClientWasConnected && _disconnected.CurrentCount == 0)
+        {
+            _disconnected.Release();
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Waits for a mid-session disconnect, then reconnects with the same retry/backoff
+    /// as the initial connect. A plain sequential await, not raced via Task.WhenAny against
+    /// anything with a "single outstanding wait" restriction - see WaitForNextRefreshAsync's doc
+    /// comment for the bug class that would reintroduce.</summary>
+    private async Task ReconnectLoopAsync(MqttClientOptions options, string host, int port, CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await _disconnected.WaitAsync(stoppingToken);
+            logger.LogWarning("Lost connection to the MQTT broker at {Host}:{Port}; attempting to reconnect", host, port);
+            await ConnectWithRetryAsync(options, host, port, stoppingToken);
+        }
+    }
+
+    private async Task PublishLoopAsync(CancellationToken stoppingToken)
+    {
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -187,7 +288,15 @@ public sealed class MqttPublisherService(
             .WithRetainFlag(true)
             .Build();
 
-        await _client.PublishAsync(message, cancellationToken);
+        await _clientLock.WaitAsync(cancellationToken);
+        try
+        {
+            await _client.PublishAsync(message, cancellationToken);
+        }
+        finally
+        {
+            _clientLock.Release();
+        }
     }
 
     private static string Round(decimal hours) => Math.Round(hours, 2).ToString(CultureInfo.InvariantCulture);
