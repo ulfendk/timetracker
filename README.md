@@ -7,12 +7,21 @@ month; and see the key figures on your own HA dashboards.
 See [`track-my-time/DOCS.md`](track-my-time/DOCS.md) for what the app does and how to use it.
 The rest of this file is about developing it.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Today](track-my-time/screenshots/today.png) | ![Distribution](track-my-time/screenshots/distribution.png) |
+
+More screenshots in [`track-my-time/DOCS.md`](track-my-time/DOCS.md#screenshots).
+
 ## Repository layout
 
-- `track-my-time/` - the Home Assistant app: `config.yaml`, `Dockerfile`, docs, icon/logo, and
-  the `app/` subfolder containing the actual .NET solution (`app/src/TrackMyTime.Web`, the
-  Blazor Server app; `app/src/TrackMyTime.Tests`, its test suite). The app's own source has to
-  live inside the app folder because Docker's build context can't reach outside it.
+- `track-my-time/` - the Home Assistant app: `config.yaml`, `Dockerfile`, docs, icon/logo,
+  `screenshots/`, and the `app/` subfolder containing the actual .NET solution
+  (`app/src/TrackMyTime.Web`, the Blazor Server app; `app/src/TrackMyTime.Tests`, its test suite).
+  The app's own source has to live inside the app folder because Docker's build context can't
+  reach outside it.
 - `repository.yaml` - marks this repo as a Home Assistant apps repository.
 - `.devcontainer.json` / `.vscode/tasks.json` - the local dev environment below.
 

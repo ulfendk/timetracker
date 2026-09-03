@@ -27,6 +27,14 @@ nominal (contracted) weekly hours - by week and by month.
 5. Add a client and a project under **Clients** / **Projects**, then start logging time on the
    **Today** page.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Today](screenshots/today.png) Logging time via from/to pickers | ![Week](screenshots/week.png) Week view, actual vs. nominal |
+| ![Month](screenshots/month.png) Month view, hours by client | ![Billing](screenshots/billing.png) Billing: hours per client/project |
+| ![Distribution](screenshots/distribution.png) Distribution across weekdays | ![Days off](screenshots/days-off.png) Days off with type |
+
 ## Home Assistant entities
 
 With an MQTT broker available, these sensors appear automatically:
