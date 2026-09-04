@@ -49,6 +49,36 @@ With an MQTT broker available, these sensors appear automatically:
 | `month_nominal_hours`    | This month's nominal target                 |
 | `month_delta_hours`      | Actual minus nominal                        |
 
+### Dashboard card: this week's hours vs. nominal
+
+A simple overview card for a Lovelace dashboard, using the [Mushroom
+cards](https://github.com/piitaya/lovelace-mushroom) (install via HACS first). Copy this into a
+dashboard's YAML (e.g. add a manual card, then "Edit in YAML"):
+
+```yaml
+type: custom:mushroom-template-card
+primary: This week
+secondary: >-
+  {{ states('sensor.tmt_week_actual_hours') }} / {{ states('sensor.tmt_week_nominal_hours') }} h
+  ({{ '+' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else '' }}{{ states('sensor.tmt_week_delta_hours') }} h)
+icon: mdi:calendar-week
+icon_color: >-
+  {{ 'green' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else 'orange' }}
+badge_icon: >-
+  {{ 'mdi:arrow-up-bold' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else 'mdi:arrow-down-bold' }}
+badge_color: >-
+  {{ 'green' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else 'orange' }}
+tap_action:
+  action: more-info
+  entity: sensor.tmt_week_actual_hours
+```
+
+Renders as e.g. "This week — 6.75 / 37.5 h (+6.75 h)", turning orange when behind nominal. The
+entity IDs above are Home Assistant's default slug of each sensor's discovery name (e.g. "TMT
+Week Actual Hours" → `sensor.tmt_week_actual_hours`) - check **Developer tools → States** and
+adjust if you had same-named entities before installing this app, since HA suffixes those
+(`_2`, `_3`, ...) instead of reusing them.
+
 ## Data & backups
 
 All data lives in a SQLite database under `/data`, which Supervisor keeps across app
