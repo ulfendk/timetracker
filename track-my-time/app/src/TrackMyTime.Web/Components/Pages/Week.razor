@@ -1,17 +1,20 @@
 @page "/week"
 @rendermode InteractiveServer
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
 @inject ITimeEntryRepository TimeEntryRepository
 @inject IDayOffRepository DayOffRepository
 @inject TimeSummaryService SummaryService
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Week of @_from.ToString("d MMM") – @_to.ToString("d MMM")</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Week_Title", _from.ToString("d MMM"), _to.ToString("d MMM")]</MudText>
 
 <MudButtonGroup Class="mb-4">
-    <MudButton OnClick="@(() => ChangeWeekAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">Previous</MudButton>
-    <MudButton OnClick="@(() => ChangeWeekAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">Next</MudButton>
+    <MudButton OnClick="@(() => ChangeWeekAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">@Localizer["Common_Previous"]</MudButton>
+    <MudButton OnClick="@(() => ChangeWeekAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">@Localizer["Common_Next"]</MudButton>
 </MudButtonGroup>
 
 @if (_summary is null)
@@ -22,34 +25,50 @@ else
 {
     <MudPaper Class="pa-4 mb-4" Elevation="2">
         <MudText Typo="Typo.subtitle1">
-            Actual @_summary.ActualHours.ToString("0.##") h of @_summary.NominalHours.ToString("0.##") h nominal
-            (weekend: @_summary.ActualWeekendHours.ToString("0.##") h)
+            @Localizer["Week_Summary", _summary.ActualHours.ToString("0.##"), _summary.NominalHours.ToString("0.##"), _summary.ActualWeekendHours.ToString("0.##")]
         </MudText>
         <MudProgressLinear Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)"
                             Value="@ProgressPercent" Class="my-2" Size="Size.Large" />
         <MudText Typo="Typo.body2" Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)">
-            @(_summary.DeltaHours >= 0 ? "Ahead by " : "Behind by ") @Math.Abs(_summary.DeltaHours).ToString("0.##") h
+            @FormatDelta()
         </MudText>
     </MudPaper>
 
-    <MudTable Items="_days" Dense="true" Hover="true">
-        <HeaderContent>
-            <MudTh>Day</MudTh>
-            <MudTh>Hours</MudTh>
-            <MudTh>Off</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd>
-                @context.Date.ToString("ddd d MMM")
-                @if (NominalHoursCalculator.IsWeekend(context.Date))
-                {
-                    <MudChip T="string" Size="Size.Small" Class="ml-2">weekend</MudChip>
-                }
-            </MudTd>
-            <MudTd>@context.Hours.ToString("0.##")</MudTd>
-            <MudTd>@(context.IsDayOff ? "✓" : "")</MudTd>
-        </RowTemplate>
-    </MudTable>
+    @for (var i = 0; i < _days.Count; i++)
+    {
+        var day = _days[i];
+        var showMonthHeader = i == 0
+            || day.Date.Month != _days[i - 1].Date.Month
+            || day.Date.Year != _days[i - 1].Date.Year;
+
+        @if (showMonthHeader)
+        {
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mt-4 mb-2">@day.Date.ToString("MMMM yyyy")</MudText>
+        }
+
+        <MudCard Class="mb-2" Elevation="1">
+            <MudCardContent Class="d-flex align-center pa-3">
+                <MudAvatar Color="@DayColor(day)" Variant="Variant.Filled" Class="mr-3">
+                    <MudIcon Icon="@DayIcon(day)" />
+                </MudAvatar>
+                <div class="flex-grow-1">
+                    <MudText Typo="Typo.subtitle1">@day.Date.ToString("dddd d MMM")</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @day.Hours.ToString("0.##") h
+                        @if (NominalHoursCalculator.IsWeekend(day.Date))
+                        {
+                            <MudChip T="string" Size="Size.Small" Class="ml-2">@Localizer["Week_Weekend"]</MudChip>
+                        }
+                        @if (day.IsDayOff)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="ml-2">@Localizer["Week_DayOff"]</MudChip>
+                        }
+                    </MudText>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditDay(day.Date))" />
+            </MudCardContent>
+        </MudCard>
+    }
 }
 
 @code {
@@ -91,6 +110,22 @@ else
             _days.Add(new DayRow(day, hoursByDay.GetValueOrDefault(day), daysOff.Contains(day)));
         }
     }
+
+    private void EditDay(DateOnly date) => NavigationManager.NavigateTo($"/day/{date:yyyy-MM-dd}");
+
+    private string FormatDelta()
+    {
+        var hours = Math.Abs(_summary!.DeltaHours).ToString("0.##");
+        return _summary.DeltaHours >= 0 ? Localizer["Common_AheadBy", hours] : Localizer["Common_BehindBy", hours];
+    }
+
+    private static Color DayColor(DayRow day) => day.IsDayOff
+        ? Color.Info
+        : NominalHoursCalculator.IsWeekend(day.Date) ? Color.Default : Color.Primary;
+
+    private static string DayIcon(DayRow day) => day.IsDayOff
+        ? Icons.Material.Filled.EventBusy
+        : NominalHoursCalculator.IsWeekend(day.Date) ? Icons.Material.Filled.Weekend : Icons.Material.Filled.Work;
 
     private sealed record DayRow(DateOnly Date, decimal Hours, bool IsDayOff);
 }

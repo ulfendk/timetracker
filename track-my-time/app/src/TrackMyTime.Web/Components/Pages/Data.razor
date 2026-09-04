@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Models.Export
 @using TrackMyTime.Web.Models.Legacy
@@ -12,26 +13,25 @@
 @inject IProjectRepository ProjectRepository
 @inject MqttPublisherService MqttPublisher
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Data</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Data_Title"]</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
-    <MudText Typo="Typo.h6" GutterBottom="true">Export</MudText>
+    <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Data_ExportHeading"]</MudText>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-        Downloads every client, project, time entry, day off, and nominal-hours setting as one
-        JSON file — a backup, and the format the import below expects.
+        @Localizer["Data_ExportDescription"]
     </MudText>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="api/export" Target="_blank"
                StartIcon="@Icons.Material.Filled.Download">
-        Download export
+        @Localizer["Data_DownloadExport"]
     </MudButton>
 </MudPaper>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
-    <MudText Typo="Typo.h6" GutterBottom="true">Import</MudText>
+    <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Data_ImportHeading"]</MudText>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-        Loads a Track My Time export JSON file. Clients/projects are matched by name so
-        re-importing your own data doesn't duplicate them.
+        @Localizer["Data_ImportDescription"]
     </MudText>
 
     <MudFileUpload T="IBrowserFile" OnFilesChanged="OnFileSelectedAsync" Accept=".json" />
@@ -43,11 +43,9 @@
 </MudPaper>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
-    <MudText Typo="Typo.h6" GutterBottom="true">Import from another time tracker</MudText>
+    <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Data_LegacyImportHeading"]</MudText>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-        One-time conversion for a different app's export (a "dates" JSON with start/end/break
-        intervals per day). Pick the date range to bring in and the existing client/project to
-        assign it to, then review the same conflict preview below before applying.
+        @Localizer["Data_LegacyImportDescription"]
     </MudText>
 
     <MudFileUpload T="IBrowserFile" OnFilesChanged="OnLegacyFileSelectedAsync" Accept=".json" />
@@ -61,19 +59,19 @@
     {
         <MudGrid Class="mt-3">
             <MudItem xs="12" sm="6">
-                <MudDatePicker Label="From" @bind-Date="_legacyFrom"
+                <MudDatePicker Label="@Localizer["Billing_From"]" @bind-Date="_legacyFrom"
                                 MinDate="_legacyRange.Value.Min.ToDateTime(TimeOnly.MinValue)"
                                 MaxDate="_legacyRange.Value.Max.ToDateTime(TimeOnly.MinValue)"
                                 FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudDatePicker Label="To" @bind-Date="_legacyTo"
+                <MudDatePicker Label="@Localizer["Billing_To"]" @bind-Date="_legacyTo"
                                 MinDate="_legacyRange.Value.Min.ToDateTime(TimeOnly.MinValue)"
                                 MaxDate="_legacyRange.Value.Max.ToDateTime(TimeOnly.MinValue)"
                                 FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int" Label="Client" @bind-Value="_legacyClientId">
+                <MudSelect T="int" Label="@Localizer["Common_Client"]" @bind-Value="_legacyClientId">
                     @foreach (var client in _clients ?? [])
                     {
                         <MudSelectItem T="int" Value="@client.Id">@client.Name</MudSelectItem>
@@ -81,7 +79,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int" Label="Project" @bind-Value="_legacyProjectId">
+                <MudSelect T="int" Label="@Localizer["Common_Project"]" @bind-Value="_legacyProjectId">
                     @foreach (var project in (_projects ?? []).Where(p => p.ClientId == _legacyClientId))
                     {
                         <MudSelectItem T="int" Value="@project.Id">@project.Name</MudSelectItem>
@@ -91,7 +89,7 @@
             <MudItem xs="12">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConvertLegacyAsync"
                            Disabled="@(_legacyFrom is null || _legacyTo is null || _legacyClientId == 0 || _legacyProjectId == 0)">
-                    Convert &amp; preview
+                    @Localizer["Data_ConvertPreview"]
                 </MudButton>
             </MudItem>
         </MudGrid>
@@ -101,33 +99,30 @@
 @if (_document is not null && _preview is not null)
 {
     <MudPaper Class="pa-4 mb-4" Elevation="2">
-        <MudText Typo="Typo.h6" GutterBottom="true">Review before applying</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Data_ReviewHeading"]</MudText>
         <MudText Typo="Typo.body1">
-            @_preview.TotalIncomingTimeEntries time entries, @_preview.TotalIncomingDaysOff days off,
-            @_preview.NewClientCount new client(s), @_preview.NewProjectCount new project(s).
+            @Localizer["Data_PreviewSummary", _preview.TotalIncomingTimeEntries, _preview.TotalIncomingDaysOff, _preview.NewClientCount, _preview.NewProjectCount]
         </MudText>
 
         @if (_preview.ConflictingTimeEntryDates.Count > 0 || _preview.ConflictingDayOffDates.Count > 0)
         {
             <MudAlert Severity="Severity.Warning" Class="mt-2">
-                @_preview.ConflictingTimeEntryDates.Count date(s) already have time entries, and
-                @_preview.ConflictingDayOffDates.Count date(s) already have a day off recorded.
-                Choose how to handle these before applying.
+                @Localizer["Data_ConflictWarning", _preview.ConflictingTimeEntryDates.Count, _preview.ConflictingDayOffDates.Count]
             </MudAlert>
 
             <MudRadioGroup T="ConflictResolution?" @bind-Value="_resolution" Class="mt-2">
-                <MudRadio T="ConflictResolution?" Value="ConflictResolution.Skip">Skip conflicting dates — leave existing data untouched</MudRadio>
-                <MudRadio T="ConflictResolution?" Value="ConflictResolution.Overwrite">Overwrite conflicting dates with the imported data</MudRadio>
+                <MudRadio T="ConflictResolution?" Value="ConflictResolution.Skip">@Localizer["Data_Skip"]</MudRadio>
+                <MudRadio T="ConflictResolution?" Value="ConflictResolution.Overwrite">@Localizer["Data_Overwrite"]</MudRadio>
             </MudRadioGroup>
         }
         else
         {
-            <MudText Typo="Typo.body2" Color="Color.Success" Class="mt-2">No conflicting dates.</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Success" Class="mt-2">@Localizer["Data_NoConflicts"]</MudText>
         }
 
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="ApplyAsync"
                    Disabled="@(RequiresResolutionChoice && _resolution is null)">
-            Apply import
+            @Localizer["Data_ApplyImport"]
         </MudButton>
     </MudPaper>
 }
@@ -180,14 +175,14 @@
             _document = await JsonSerializer.DeserializeAsync<ExportDocument>(stream);
             if (_document is null)
             {
-                _fileError = "That file didn't contain a valid export document.";
+                _fileError = Localizer["Data_FileNotValidDocument"];
                 return;
             }
             _preview = await ExportImportService.BuildPreviewAsync(_document);
         }
         catch (JsonException)
         {
-            _fileError = "That file isn't valid JSON, or isn't a Track My Time export.";
+            _fileError = Localizer["Data_FileNotValidJson"];
         }
     }
 
@@ -209,7 +204,7 @@
             _legacyRange = LegacyImportConverter.GetDateRange(_legacyExport);
             if (_legacyRange is null)
             {
-                _legacyError = "That file didn't contain any recognizable dated entries.";
+                _legacyError = Localizer["Data_LegacyFileNoEntries"];
                 _legacyExport = null;
                 return;
             }
@@ -222,7 +217,7 @@
         }
         catch (JsonException)
         {
-            _legacyError = "That file isn't valid JSON, or isn't in the expected legacy format.";
+            _legacyError = Localizer["Data_LegacyFileNotValidJson"];
         }
     }
 
@@ -257,14 +252,15 @@
         var resolution = _resolution ?? ConflictResolution.Skip;
         var result = await ExportImportService.ApplyAsync(_document, resolution);
 
-        _resultMessage = $"Imported {result.TimeEntriesImported} time entries ({result.TimeEntriesSkipped} skipped), " +
-                          $"{result.DaysOffImported} days off ({result.DaysOffSkipped} skipped), " +
-                          $"{result.NominalHoursSettingsImported} nominal-hours setting(s).";
+        _resultMessage = Localizer["Data_ResultMessage",
+            result.TimeEntriesImported, result.TimeEntriesSkipped,
+            result.DaysOffImported, result.DaysOffSkipped,
+            result.NominalHoursSettingsImported];
         _document = null;
         _preview = null;
         _resolution = null;
 
         MqttPublisher.RequestRefresh();
-        Snackbar.Add("Import applied.", Severity.Success);
+        Snackbar.Add(Localizer["Data_ImportApplied"].Value, Severity.Success);
     }
 }

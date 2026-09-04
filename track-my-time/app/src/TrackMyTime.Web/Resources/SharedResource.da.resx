@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Nav -->
+  <data name="Nav_Today" xml:space="preserve"><value>I dag</value></data>
+  <data name="Nav_Week" xml:space="preserve"><value>Uge</value></data>
+  <data name="Nav_Month" xml:space="preserve"><value>Måned</value></data>
+  <data name="Nav_DaysOff" xml:space="preserve"><value>Fravær</value></data>
+  <data name="Nav_Billing" xml:space="preserve"><value>Fakturering</value></data>
+  <data name="Nav_Distribution" xml:space="preserve"><value>Fordeling</value></data>
+  <data name="Nav_Clients" xml:space="preserve"><value>Kunder</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projekter</value></data>
+  <data name="Nav_Data" xml:space="preserve"><value>Data</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Indstillinger</value></data>
+
+  <!-- Layout -->
+  <data name="Layout_SwitchToLight" xml:space="preserve"><value>Skift til lyst tema</value></data>
+  <data name="Layout_SwitchToDark" xml:space="preserve"><value>Skift til mørkt tema</value></data>
+  <data name="Layout_Language" xml:space="preserve"><value>Sprog</value></data>
+
+  <!-- Common -->
+  <data name="Common_Add" xml:space="preserve"><value>Tilføj</value></data>
+  <data name="Common_SaveChanges" xml:space="preserve"><value>Gem ændringer</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Annuller</value></data>
+  <data name="Common_Note" xml:space="preserve"><value>Note (valgfri)</value></data>
+  <data name="Common_Client" xml:space="preserve"><value>Kunde</value></data>
+  <data name="Common_Project" xml:space="preserve"><value>Projekt</value></data>
+  <data name="Common_Active" xml:space="preserve"><value>Aktiv</value></data>
+  <data name="Common_Archived" xml:space="preserve"><value>Arkiveret</value></data>
+  <data name="Common_Archive" xml:space="preserve"><value>Arkiver</value></data>
+  <data name="Common_Restore" xml:space="preserve"><value>Genskab</value></data>
+  <data name="Common_Previous" xml:space="preserve"><value>Forrige</value></data>
+  <data name="Common_Next" xml:space="preserve"><value>Næste</value></data>
+  <data name="Common_Hours" xml:space="preserve"><value>Timer</value></data>
+  <data name="Common_Date" xml:space="preserve"><value>Dato</value></data>
+  <data name="Common_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Common_AheadBy" xml:space="preserve"><value>Foran med {0} t</value></data>
+  <data name="Common_BehindBy" xml:space="preserve"><value>Bagud med {0} t</value></data>
+  <data name="Common_Name" xml:space="preserve"><value>Navn</value></data>
+  <data name="Common_Status" xml:space="preserve"><value>Status</value></data>
+
+  <!-- Today -->
+  <data name="Today_TodayHeading" xml:space="preserve"><value>I dag</value></data>
+  <data name="Today_BackToToday" xml:space="preserve"><value>Tilbage til i dag</value></data>
+  <data name="Today_ThisWeek" xml:space="preserve"><value>Denne uge</value></data>
+  <data name="Today_LastWeek" xml:space="preserve"><value>Sidste uge</value></data>
+  <data name="Today_LogTime" xml:space="preserve"><value>Registrer tid</value></data>
+  <data name="Today_AddClientProjectFirst" xml:space="preserve"><value>Tilføj en kunde og et projekt først.</value></data>
+  <data name="Today_Project" xml:space="preserve"><value>Projekt</value></data>
+  <data name="Today_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Today_End" xml:space="preserve"><value>Slut</value></data>
+  <data name="Today_BreakMinutes" xml:space="preserve"><value>Pause (minutter)</value></data>
+  <data name="Today_AddEntry" xml:space="preserve"><value>Tilføj registrering</value></data>
+  <data name="Today_MarkTodayOff" xml:space="preserve"><value>Marker i dag som fridag</value></data>
+  <data name="Today_MarkDayOff" xml:space="preserve"><value>Marker denne dag som fridag</value></data>
+  <data name="Today_LoggedTodayHeading" xml:space="preserve"><value>Registreret i dag — {0} t</value></data>
+  <data name="Today_LoggedThatDayHeading" xml:space="preserve"><value>Registreret den dag — {0} t</value></data>
+  <data name="Today_NothingLoggedYet" xml:space="preserve"><value>Intet registreret endnu.</value></data>
+  <data name="Today_ClientProject" xml:space="preserve"><value>Kunde / Projekt</value></data>
+  <data name="Today_Time" xml:space="preserve"><value>Tidspunkt</value></data>
+  <data name="Today_MinBreak" xml:space="preserve"><value>min. pause</value></data>
+  <data name="Today_StartEndRequired" xml:space="preserve"><value>Start- og sluttidspunkt er påkrævet.</value></data>
+  <data name="Today_EndAfterStart" xml:space="preserve"><value>Sluttidspunkt skal være efter starttidspunkt.</value></data>
+  <data name="Today_BreakTooLong" xml:space="preserve"><value>Pausen kan ikke være længere end den arbejdede tid.</value></data>
+  <data name="Today_CouldNotSave" xml:space="preserve"><value>Kunne ikke gemme registreringen: {0}</value></data>
+
+  <!-- Week -->
+  <data name="Week_Title" xml:space="preserve"><value>Uge fra {0} – {1}</value></data>
+  <data name="Week_Summary" xml:space="preserve"><value>Faktisk {0} t af {1} t normeret (weekend: {2} t)</value></data>
+  <data name="Week_Weekend" xml:space="preserve"><value>weekend</value></data>
+  <data name="Week_DayOff" xml:space="preserve"><value>fridag</value></data>
+
+  <!-- Month -->
+  <data name="Month_SummarySingular" xml:space="preserve"><value>Faktisk {0} t af {1} t normeret over {2} normeret dag (weekend: {3} t, fraværsdage: {4})</value></data>
+  <data name="Month_SummaryPlural" xml:space="preserve"><value>Faktisk {0} t af {1} t normeret over {2} normerede dage (weekend: {3} t, fraværsdage: {4})</value></data>
+  <data name="Month_ByClient" xml:space="preserve"><value>Efter kunde</value></data>
+  <data name="Month_NothingLoggedThisMonth" xml:space="preserve"><value>Intet registreret denne måned.</value></data>
+
+  <!-- Days off -->
+  <data name="DaysOff_Title" xml:space="preserve"><value>Fravær</value></data>
+  <data name="DaysOff_Description" xml:space="preserve"><value>Planlæg eller registrer en fridag for en hvilken som helst dato — fortid eller fremtid — med dens type. Vælg også en slutdato for at udfylde en hel periode (f.eks. en uges ferie) på én gang: weekender og dage, der allerede har et registreret fravær, springes automatisk over. Brug siden "I dag" til en hurtig fridags-markering.</value></data>
+  <data name="DaysOff_StartDate" xml:space="preserve"><value>Startdato</value></data>
+  <data name="DaysOff_Date" xml:space="preserve"><value>Dato</value></data>
+  <data name="DaysOff_EndDate" xml:space="preserve"><value>Slutdato (valgfri)</value></data>
+  <data name="DaysOff_NoneRecorded" xml:space="preserve"><value>Intet fravær registreret i nærheden.</value></data>
+  <data name="DaysOff_Days" xml:space="preserve"><value>Dage</value></data>
+  <data name="DaysOff_TypeSickness" xml:space="preserve"><value>Sygdom</value></data>
+  <data name="DaysOff_TypeVacation" xml:space="preserve"><value>Ferie</value></data>
+  <data name="DaysOff_TypeOfficialHoliday" xml:space="preserve"><value>Helligdag</value></data>
+  <data name="DaysOff_TypeForcedTimeOff" xml:space="preserve"><value>Pålagt fridag</value></data>
+
+  <!-- Billing -->
+  <data name="Billing_Title" xml:space="preserve"><value>Fakturering</value></data>
+  <data name="Billing_Description" xml:space="preserve"><value>Registrerede timer pr. kunde og projekt for en periode — ingen takster, kun hvor meget der skal faktureres.</value></data>
+  <data name="Billing_From" xml:space="preserve"><value>Fra</value></data>
+  <data name="Billing_To" xml:space="preserve"><value>Til</value></data>
+  <data name="Billing_Generate" xml:space="preserve"><value>Generer</value></data>
+  <data name="Billing_NothingLogged" xml:space="preserve"><value>Intet registreret i denne periode.</value></data>
+  <data name="Billing_Total" xml:space="preserve"><value>I alt</value></data>
+
+  <!-- Clients -->
+  <data name="Clients_Title" xml:space="preserve"><value>Kunder</value></data>
+  <data name="Clients_NewName" xml:space="preserve"><value>Nyt kundenavn</value></data>
+  <data name="Clients_Name" xml:space="preserve"><value>Kundenavn</value></data>
+  <data name="Clients_AddClient" xml:space="preserve"><value>Tilføj kunde</value></data>
+
+  <!-- Projects -->
+  <data name="Projects_Title" xml:space="preserve"><value>Projekter</value></data>
+  <data name="Projects_AddClientFirst" xml:space="preserve"><value>Tilføj en kunde først.</value></data>
+  <data name="Projects_NewName" xml:space="preserve"><value>Nyt projektnavn</value></data>
+  <data name="Projects_Name" xml:space="preserve"><value>Projektnavn</value></data>
+  <data name="Projects_AddProject" xml:space="preserve"><value>Tilføj projekt</value></data>
+
+  <!-- Data -->
+  <data name="Data_Title" xml:space="preserve"><value>Data</value></data>
+  <data name="Data_ExportHeading" xml:space="preserve"><value>Eksport</value></data>
+  <data name="Data_ExportDescription" xml:space="preserve"><value>Downloader alle kunder, projekter, tidsregistreringer, fraværsdage og normtime-indstillinger som én JSON-fil — en sikkerhedskopi, og det format importen nedenfor forventer.</value></data>
+  <data name="Data_DownloadExport" xml:space="preserve"><value>Download eksport</value></data>
+  <data name="Data_ImportHeading" xml:space="preserve"><value>Import</value></data>
+  <data name="Data_ImportDescription" xml:space="preserve"><value>Indlæser en JSON-eksportfil fra Track My Time. Kunder/projekter matches på navn, så genimport af egne data ikke opretter dubletter.</value></data>
+  <data name="Data_LegacyImportHeading" xml:space="preserve"><value>Import fra et andet tidsregistreringssystem</value></data>
+  <data name="Data_LegacyImportDescription" xml:space="preserve"><value>Engangskonvertering af en eksport fra et andet program (en "dates"-JSON med start/slut/pause pr. dag). Vælg det datointerval, der skal importeres, og den eksisterende kunde/det eksisterende projekt, det skal tilknyttes, og gennemgå derefter den samme konfliktforhåndsvisning nedenfor, før du anvender den.</value></data>
+  <data name="Data_ConvertPreview" xml:space="preserve"><value>Konverter og forhåndsvis</value></data>
+  <data name="Data_ReviewHeading" xml:space="preserve"><value>Gennemgå før du anvender</value></data>
+  <data name="Data_PreviewSummary" xml:space="preserve"><value>{0} tidsregistreringer, {1} fraværsdage, {2} ny(e) kunde(r), {3} ny(e) projekt(er).</value></data>
+  <data name="Data_ConflictWarning" xml:space="preserve"><value>{0} dato(er) har allerede tidsregistreringer, og {1} dato(er) har allerede et registreret fravær. Vælg, hvordan disse skal håndteres, før du anvender importen.</value></data>
+  <data name="Data_Skip" xml:space="preserve"><value>Spring konfliktdatoer over — lad eksisterende data være urørt</value></data>
+  <data name="Data_Overwrite" xml:space="preserve"><value>Overskriv konfliktdatoer med de importerede data</value></data>
+  <data name="Data_NoConflicts" xml:space="preserve"><value>Ingen datokonflikter.</value></data>
+  <data name="Data_ApplyImport" xml:space="preserve"><value>Anvend import</value></data>
+  <data name="Data_FileNotValidDocument" xml:space="preserve"><value>Filen indeholdt ikke et gyldigt eksportdokument.</value></data>
+  <data name="Data_FileNotValidJson" xml:space="preserve"><value>Filen er ikke gyldig JSON, eller er ikke en Track My Time-eksport.</value></data>
+  <data name="Data_LegacyFileNoEntries" xml:space="preserve"><value>Filen indeholdt ingen genkendelige daterede registreringer.</value></data>
+  <data name="Data_LegacyFileNotValidJson" xml:space="preserve"><value>Filen er ikke gyldig JSON, eller er ikke i det forventede legacy-format.</value></data>
+  <data name="Data_ImportApplied" xml:space="preserve"><value>Import anvendt.</value></data>
+  <data name="Data_ResultMessage" xml:space="preserve"><value>Importerede {0} tidsregistreringer ({1} sprunget over), {2} fraværsdage ({3} sprunget over), {4} normtime-indstilling(er).</value></data>
+
+  <!-- Distribution -->
+  <data name="Distribution_Title" xml:space="preserve"><value>Fordeling</value></data>
+  <data name="Distribution_Description" xml:space="preserve"><value>Faktiske timer vs. normtimer pr. ugedag — f.eks. om du konsekvent arbejder mere nogle dage end andre.</value></data>
+  <data name="Distribution_Week" xml:space="preserve"><value>Uge</value></data>
+  <data name="Distribution_Month" xml:space="preserve"><value>Måned</value></data>
+  <data name="Distribution_Actual" xml:space="preserve"><value>Faktisk</value></data>
+  <data name="Distribution_Nominal" xml:space="preserve"><value>Normeret</value></data>
+  <data name="Distribution_Mon" xml:space="preserve"><value>man</value></data>
+  <data name="Distribution_Tue" xml:space="preserve"><value>tir</value></data>
+  <data name="Distribution_Wed" xml:space="preserve"><value>ons</value></data>
+  <data name="Distribution_Thu" xml:space="preserve"><value>tor</value></data>
+  <data name="Distribution_Fri" xml:space="preserve"><value>fre</value></data>
+  <data name="Distribution_Sat" xml:space="preserve"><value>lør</value></data>
+  <data name="Distribution_Sun" xml:space="preserve"><value>søn</value></data>
+
+  <!-- Settings -->
+  <data name="Settings_Title" xml:space="preserve"><value>Indstillinger</value></data>
+  <data name="Settings_HAIntegration" xml:space="preserve"><value>Home Assistant-integration</value></data>
+  <data name="Settings_MqttConnected" xml:space="preserve"><value>forbundet</value></data>
+  <data name="Settings_MqttNotConnected" xml:space="preserve"><value>ikke forbundet</value></data>
+  <data name="Settings_HADescription" xml:space="preserve"><value>Kræver en MQTT-broker konfigureret i Home Assistant (f.eks. Mosquitto broker-tilføjelsen) — Track My Time finder den automatisk og kræver ingen opsætning her.</value></data>
+  <data name="Settings_NominalHoursHistory" xml:space="preserve"><value>Normtimehistorik</value></data>
+  <data name="Settings_NominalHoursDescription" xml:space="preserve"><value>Dine kontraktlige ugentlige timer (f.eks. 37,5). Tilføj en ny post, når de ændres — historikken bevares, så tidligere uger/måneder stadig sammenlignes med den sats, der gjaldt dengang.</value></data>
+  <data name="Settings_EffectiveFrom" xml:space="preserve"><value>Gældende fra</value></data>
+  <data name="Settings_WeeklyHours" xml:space="preserve"><value>Timer om ugen</value></data>
+  <data name="Settings_DuplicateEffectiveFrom" xml:space="preserve"><value>Der er allerede en normtime-post gældende fra den dato.</value></data>
+
+  <!-- Not found / error banner -->
+  <data name="NotFound_Title" xml:space="preserve"><value>Ikke fundet</value></data>
+  <data name="NotFound_Message" xml:space="preserve"><value>Beklager, det indhold, du leder efter, findes ikke.</value></data>
+  <data name="ErrorBanner_Message" xml:space="preserve"><value>Der opstod en uventet fejl.</value></data>
+  <data name="ErrorBanner_Reload" xml:space="preserve"><value>Genindlæs</value></data>
+</root>

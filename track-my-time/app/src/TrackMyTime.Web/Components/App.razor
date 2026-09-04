@@ -1,7 +1,8 @@
+@using System.Globalization
 @using Microsoft.AspNetCore.Http
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 
 <head>
     <meta charset="utf-8" />
@@ -22,6 +23,7 @@
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="@Assets["theme.js"]"></script>
 </body>
 
 </html>

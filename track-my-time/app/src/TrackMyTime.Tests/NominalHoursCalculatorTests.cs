@@ -129,4 +129,18 @@ public class NominalHoursCalculatorTests
         Assert.Equal(0m, byWeekday.Single(w => w.DayOfWeek == DayOfWeek.Saturday).NominalHours);
         Assert.Equal(0m, byWeekday.Single(w => w.DayOfWeek == DayOfWeek.Sunday).NominalHours);
     }
+
+    [Fact]
+    public void Summarize_NominalDaysCountsEligibleWeekdaysOnly()
+    {
+        // Monday 2026-09-07 through Sunday 2026-09-13, with one weekday day off (Wednesday).
+        var daysOff = new List<DayOff> { new() { Date = new DateOnly(2026, 9, 9) } };
+
+        var summary = NominalHoursCalculator.Summarize(
+            new DateOnly(2026, 9, 7), new DateOnly(2026, 9, 13),
+            StandardWeek, daysOff, []);
+
+        // 5 weekdays minus the 1 day off = 4 nominal days.
+        Assert.Equal(4, summary.NominalDays);
+    }
 }

@@ -1,23 +1,25 @@
 @page "/clients"
 @rendermode InteractiveServer
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @inject IClientRepository ClientRepository
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Clients</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Clients_Title"]</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudGrid>
         <MudItem xs="12" sm="8">
-            <MudTextField @bind-Value="_newName" Label="@(_editingId is null ? "New client name" : "Client name")" Immediate="true" />
+            <MudTextField @bind-Value="_newName" Label="@(_editingId is null ? Localizer["Clients_NewName"] : Localizer["Clients_Name"])" Immediate="true" />
         </MudItem>
         <MudItem xs="12" sm="4" Class="d-flex align-center ga-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@string.IsNullOrWhiteSpace(_newName)">
-                @(_editingId is null ? "Add client" : "Save changes")
+                @(_editingId is null ? Localizer["Clients_AddClient"] : Localizer["Common_SaveChanges"])
             </MudButton>
             @if (_editingId is not null)
             {
-                <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="CancelEdit">@Localizer["Common_Cancel"]</MudButton>
             }
         </MudItem>
     </MudGrid>
@@ -31,17 +33,17 @@ else
 {
     <MudTable Items="_clients" Dense="true" Hover="true">
         <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Status</MudTh>
+            <MudTh>@Localizer["Common_Name"]</MudTh>
+            <MudTh>@Localizer["Common_Status"]</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.Name</MudTd>
-            <MudTd>@(context.IsActive ? "Active" : "Archived")</MudTd>
+            <MudTd>@(context.IsActive ? Localizer["Common_Active"] : Localizer["Common_Archived"])</MudTd>
             <MudTd>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context))" />
                 <MudButton Size="Size.Small" OnClick="@(() => ToggleActiveAsync(context))">
-                    @(context.IsActive ? "Archive" : "Restore")
+                    @(context.IsActive ? Localizer["Common_Archive"] : Localizer["Common_Restore"])
                 </MudButton>
             </MudTd>
         </RowTemplate>

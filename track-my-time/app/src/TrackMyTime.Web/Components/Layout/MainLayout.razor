@@ -1,9 +1,15 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.Extensions.Localization
 @using MudBlazor.Services
 @implements IAsyncDisposable
 @inject IBrowserViewportService BrowserViewportService
+@inject IJSRuntime JsRuntime
+@inject ProtectedLocalStorage ProtectedLocalStorage
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudThemeProvider Theme="_theme" />
+<MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -13,6 +19,13 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
         <MudText Typo="Typo.h6" Class="ml-2">🧨 Track My Time</MudText>
         <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.Language" Color="Color.Inherit" AriaLabel="@Localizer["Layout_Language"].Value">
+            <MudMenuItem OnClick="@(() => SetCulture("en"))">English</MudMenuItem>
+            <MudMenuItem OnClick="@(() => SetCulture("da"))">Dansk</MudMenuItem>
+        </MudMenu>
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                        Color="Color.Inherit" OnClick="@ToggleDarkModeAsync"
+                        title="@(_isDarkMode ? Localizer["Layout_SwitchToLight"].Value : Localizer["Layout_SwitchToDark"].Value)" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="1"
                Variant="@DrawerVariant.Responsive" Breakpoint="Breakpoint.Md">
@@ -26,8 +39,8 @@
 </MudLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    @Localizer["ErrorBanner_Message"]
+    <a href="." class="reload">@Localizer["ErrorBanner_Reload"]</a>
     <span class="dismiss">🗙</span>
 </div>
 
@@ -60,8 +73,34 @@
     private bool _drawerOpen = true;
     private readonly Guid _viewportSubscriptionId = Guid.NewGuid();
 
+    // Dark mode (#16): an explicit user choice (via the app-bar toggle) is persisted in
+    // ProtectedLocalStorage and always wins; absent that, we follow the browser's own
+    // prefers-color-scheme on first render. ProtectedLocalStorage relies on the app's Data
+    // Protection keys, which are already persisted under /data (see Program.cs), so the choice
+    // survives container restarts/upgrades too.
+    private const string DarkModeStorageKey = "trackmytime.darkMode";
+    private bool _isDarkMode;
+
     protected override async Task OnInitializedAsync() =>
         await BrowserViewportService.SubscribeAsync(_viewportSubscriptionId, OnResizedAsync, new ResizeOptions(), fireImmediately: true);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var stored = await ProtectedLocalStorage.GetAsync<bool>(DarkModeStorageKey);
+        _isDarkMode = stored.Success ? stored.Value : await JsRuntime.InvokeAsync<bool>("themeInterop.prefersDark");
+        StateHasChanged();
+    }
+
+    private async Task ToggleDarkModeAsync()
+    {
+        _isDarkMode = !_isDarkMode;
+        await ProtectedLocalStorage.SetAsync(DarkModeStorageKey, _isDarkMode);
+    }
 
     private async Task OnResizedAsync(BrowserViewportEventArgs args)
     {
@@ -73,6 +112,15 @@
     }
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    // Backlog #17: Blazor Server can't hot-swap culture mid-circuit, so this is a real navigation
+    // (forceLoad: true) to the /culture/set endpoint (Program.cs), which sets the culture cookie
+    // and redirects back here - a genuine full-page round trip, not a SignalR interaction.
+    private void SetCulture(string culture)
+    {
+        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.NavigateTo($"culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(relative)}", forceLoad: true);
+    }
 
     public async ValueTask DisposeAsync() => await BrowserViewportService.UnsubscribeAsync(_viewportSubscriptionId);
 }

@@ -11,7 +11,8 @@ public sealed record PeriodSummary(
     decimal NominalHours,
     decimal ActualWeekdayHours,
     decimal ActualWeekendHours,
-    IReadOnlyList<DateOnly> DaysOff)
+    IReadOnlyList<DateOnly> DaysOff,
+    int NominalDays = 0)
 {
     public decimal ActualHours => ActualWeekdayHours + ActualWeekendHours;
 
@@ -51,6 +52,7 @@ public static class NominalHoursCalculator
         var daysOffSet = daysOffInRange.ToHashSet();
 
         var nominal = 0m;
+        var nominalDays = 0;
         for (var day = from; day <= to; day = day.AddDays(1))
         {
             if (IsWeekend(day) || daysOffSet.Contains(day))
@@ -58,6 +60,7 @@ public static class NominalHoursCalculator
                 continue;
             }
             nominal += GetEffectiveWeeklyHours(nominalSettings, day) / 5m;
+            nominalDays++;
         }
 
         var weekdayMinutes = 0;
@@ -78,7 +81,7 @@ public static class NominalHoursCalculator
             }
         }
 
-        return new PeriodSummary(from, to, nominal, weekdayMinutes / 60m, weekendMinutes / 60m, daysOffInRange);
+        return new PeriodSummary(from, to, nominal, weekdayMinutes / 60m, weekendMinutes / 60m, daysOffInRange, nominalDays);
     }
 
     public static bool IsWeekend(DateOnly date) => date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;

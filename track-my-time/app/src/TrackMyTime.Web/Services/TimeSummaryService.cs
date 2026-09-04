@@ -25,9 +25,9 @@ public sealed class TimeSummaryService(
         return new TodaySummary(date, entries, totalHours, dayOff is not null);
     }
 
-    public Task<PeriodSummary> GetWeekAsync(DateOnly anyDateInWeek)
+    public Task<PeriodSummary> GetWeekAsync(DateOnly anyDateInWeek, int weeksOffset = 0)
     {
-        var (from, to) = DateRanges.WeekContaining(anyDateInWeek);
+        var (from, to) = DateRanges.WeekContaining(anyDateInWeek.AddDays(7 * weeksOffset));
         return SummarizeRangeAsync(from, to);
     }
 

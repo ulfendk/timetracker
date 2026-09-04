@@ -1,40 +1,41 @@
 @page "/settings"
 @rendermode InteractiveServer
+@using System.Globalization
 @using Microsoft.Data.Sqlite
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
 @inject INominalHoursRepository NominalHoursRepository
 @inject MqttPublisherService MqttPublisher
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Settings</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Settings_Title"]</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
-    <MudText Typo="Typo.h6" GutterBottom="true">Home Assistant integration</MudText>
+    <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Settings_HAIntegration"]</MudText>
     <MudChip T="string" Color="@(MqttPublisher.IsConnected ? Color.Success : Color.Default)"
              Icon="@Icons.Material.Filled.Circle">
-        MQTT: @(MqttPublisher.IsConnected ? "connected" : "not connected")
+        MQTT: @(MqttPublisher.IsConnected ? Localizer["Settings_MqttConnected"] : Localizer["Settings_MqttNotConnected"])
     </MudChip>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
-        Requires an MQTT broker configured in Home Assistant (e.g. the Mosquitto broker app) —
-        Track My Time discovers it automatically and needs no setup here.
+        @Localizer["Settings_HADescription"]
     </MudText>
 </MudPaper>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
-    <MudText Typo="Typo.h6" GutterBottom="true">Nominal hours history</MudText>
+    <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Settings_NominalHoursHistory"]</MudText>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-        Your contracted weekly hours (e.g. 37.5). Add a new entry when it changes — history is
-        kept so past weeks/months are still compared against the rate that applied at the time.
+        @Localizer["Settings_NominalHoursDescription"]
     </MudText>
 
     @if (_settings is not null)
     {
         <MudTable Items="_settings" Dense="true" Class="mb-4">
             <HeaderContent>
-                <MudTh>Effective from</MudTh>
-                <MudTh>Weekly hours</MudTh>
+                <MudTh>@Localizer["Settings_EffectiveFrom"]</MudTh>
+                <MudTh>@Localizer["Settings_WeeklyHours"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -50,19 +51,25 @@
 
     <MudGrid>
         <MudItem xs="12" sm="4">
-            <MudDatePicker Label="Effective from" @bind-Date="_newEffectiveFrom"
+            <MudDatePicker Label="@Localizer["Settings_EffectiveFrom"]" @bind-Date="_newEffectiveFrom"
                             FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudNumericField T="decimal" Label="Weekly hours" @bind-Value="_newWeeklyHours" Min="0m" Step="0.5m" />
+            @* Backlog #19: unlike plain ToString("0.##") (which already follows the ambient
+               CultureInfo.CurrentCulture), MudNumericField parses/formats using its own Culture
+               parameter - defaulting to invariant, where "," is a thousands separator, not a
+               decimal point (so typing "40,25" on a Danish keyboard silently became 4025). Must
+               be set explicitly to match the request culture set in Program.cs/culture/set. *@
+            <MudNumericField T="decimal" Label="@Localizer["Settings_WeeklyHours"]" @bind-Value="_newWeeklyHours" Min="0m" Step="0.5m"
+                             Culture="CultureInfo.CurrentCulture" />
         </MudItem>
         <MudItem xs="12" sm="4" Class="d-flex align-center ga-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(_newEffectiveFrom is null)">
-                @(_editingId is null ? "Add" : "Save changes")
+                @(_editingId is null ? Localizer["Common_Add"] : Localizer["Common_SaveChanges"])
             </MudButton>
             @if (_editingId is not null)
             {
-                <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="CancelEdit">@Localizer["Common_Cancel"]</MudButton>
             }
         </MudItem>
     </MudGrid>
@@ -120,7 +127,7 @@
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == 19)
         {
-            Snackbar.Add("Another nominal-hours entry is already effective from that date.", Severity.Error);
+            Snackbar.Add(Localizer["Settings_DuplicateEffectiveFrom"].Value, Severity.Error);
             return;
         }
 

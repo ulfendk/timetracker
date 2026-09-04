@@ -1,40 +1,45 @@
 @page "/days-off"
 @rendermode InteractiveServer
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
 @inject IDayOffRepository DayOffRepository
 @inject MqttPublisherService MqttPublisher
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Days off</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-    Plan or record a day off for any date — past or future — with its type. For a quick "mark
-    today as off" toggle, use the Today page instead.
-</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@Localizer["DaysOff_Title"]</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">@Localizer["DaysOff_Description"]</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudGrid>
         <MudItem xs="12" sm="3">
-            <MudDatePicker Label="Date" @bind-Date="_newDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+            <MudDatePicker Label="@(_editingId is null ? Localizer["DaysOff_StartDate"] : Localizer["DaysOff_Date"])" @bind-Date="_newDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
         </MudItem>
-        <MudItem xs="12" sm="3">
-            <MudSelect T="DayOffType?" Label="Type" @bind-Value="_newType">
+        @if (_editingId is null)
+        {
+            <MudItem xs="12" sm="3">
+                <MudDatePicker Label="@Localizer["DaysOff_EndDate"]" @bind-Date="_newEndDate" MinDate="_newDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+            </MudItem>
+        }
+        <MudItem xs="12" sm="2">
+            <MudSelect T="DayOffType?" Label="@Localizer["Common_Type"]" @bind-Value="_newType">
                 @foreach (var type in Enum.GetValues<DayOffType>())
                 {
-                    <MudSelectItem T="DayOffType?" Value="@type">@type</MudSelectItem>
+                    <MudSelectItem T="DayOffType?" Value="@type">@TypeLabel(type)</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
-        <MudItem xs="12" sm="3">
-            <MudTextField Label="Note (optional)" @bind-Value="_newNote" Immediate="true" />
+        <MudItem xs="12" sm="@(_editingId is null ? 2 : 5)">
+            <MudTextField Label="@Localizer["Common_Note"]" @bind-Value="_newNote" Immediate="true" />
         </MudItem>
-        <MudItem xs="12" sm="3" Class="d-flex align-center ga-2">
+        <MudItem xs="12" sm="2" Class="d-flex align-center ga-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(_newDate is null)">
-                @(_editingId is null ? "Add" : "Save changes")
+                @(_editingId is null ? Localizer["Common_Add"] : Localizer["Common_SaveChanges"])
             </MudButton>
             @if (_editingId is not null)
             {
-                <MudButton Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+                <MudButton Variant="Variant.Text" OnClick="CancelEdit">@Localizer["Common_Cancel"]</MudButton>
             }
         </MudItem>
     </MudGrid>
@@ -44,26 +49,35 @@
 {
     <MudProgressCircular Indeterminate="true" />
 }
-else if (_days.Count == 0)
+else if (_groups.Count == 0)
 {
-    <MudText Typo="Typo.body2" Color="Color.Secondary">No days off recorded nearby.</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">@Localizer["DaysOff_NoneRecorded"]</MudText>
 }
 else
 {
-    <MudTable Items="_days" Dense="true" Hover="true">
+    <MudTable Items="_groups" Dense="true" Hover="true">
         <HeaderContent>
-            <MudTh>Date</MudTh>
-            <MudTh>Type</MudTh>
-            <MudTh>Note</MudTh>
+            <MudTh>@Localizer["DaysOff_Date"]</MudTh>
+            <MudTh>@Localizer["Common_Type"]</MudTh>
+            <MudTh>@Localizer["DaysOff_Days"]</MudTh>
+            <MudTh>@Localizer["Common_Note"]</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd>@context.Date.ToString("ddd d MMM yyyy")</MudTd>
-            <MudTd>@(context.Type?.ToString() ?? "—")</MudTd>
+            <MudTd>
+                @(context.Count == 1
+                    ? context.Start.ToString("ddd d MMM yyyy")
+                    : $"{context.Start:d MMM} – {context.End:d MMM yyyy}")
+            </MudTd>
+            <MudTd>@(context.Type is null ? "—" : TypeLabel(context.Type))</MudTd>
+            <MudTd>@context.Count</MudTd>
             <MudTd>@context.Note</MudTd>
             <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteAsync(context.Id))" />
+                @if (context.Count == 1)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context.Days[0]))" />
+                }
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteGroupAsync(context))" />
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -71,7 +85,9 @@ else
 
 @code {
     private List<DayOff>? _days;
+    private List<DayOffGroup> _groups = [];
     private DateTime? _newDate = DateTime.Today;
+    private DateTime? _newEndDate;
     private DayOffType? _newType = DayOffType.Vacation;
     private string? _newNote;
     private int? _editingId;
@@ -83,12 +99,23 @@ else
         var from = DateOnly.FromDateTime(DateTime.Now).AddDays(-90);
         var to = DateOnly.FromDateTime(DateTime.Now).AddDays(365);
         _days = (await DayOffRepository.GetByDateRangeAsync(from, to)).OrderBy(d => d.Date).ToList();
+        _groups = DayOffGrouping.BuildGroups(_days);
     }
+
+    private string TypeLabel(DayOffType? type) => type switch
+    {
+        DayOffType.Sickness => Localizer["DaysOff_TypeSickness"],
+        DayOffType.Vacation => Localizer["DaysOff_TypeVacation"],
+        DayOffType.OfficialHoliday => Localizer["DaysOff_TypeOfficialHoliday"],
+        DayOffType.ForcedTimeOff => Localizer["DaysOff_TypeForcedTimeOff"],
+        _ => "—",
+    };
 
     private void StartEdit(DayOff dayOff)
     {
         _editingId = dayOff.Id;
         _newDate = dayOff.Date.ToDateTime(TimeOnly.MinValue);
+        _newEndDate = null;
         _newType = dayOff.Type;
         _newNote = dayOff.Note;
     }
@@ -97,6 +124,7 @@ else
     {
         _editingId = null;
         _newDate = DateTime.Today;
+        _newEndDate = null;
         _newType = DayOffType.Vacation;
         _newNote = null;
     }
@@ -108,21 +136,30 @@ else
             return;
         }
 
-        var dayOff = new DayOff
-        {
-            Id = _editingId ?? 0,
-            Date = DateOnly.FromDateTime(_newDate.Value),
-            Type = _newType,
-            Note = string.IsNullOrWhiteSpace(_newNote) ? null : _newNote,
-        };
+        var start = DateOnly.FromDateTime(_newDate.Value);
 
-        if (_editingId is null)
+        if (_editingId is null && _newEndDate is not null && DateOnly.FromDateTime(_newEndDate.Value) > start)
         {
-            await DayOffRepository.CreateAsync(dayOff);
+            await SaveRangeAsync(start, DateOnly.FromDateTime(_newEndDate.Value));
         }
         else
         {
-            await DayOffRepository.UpdateAsync(dayOff);
+            var dayOff = new DayOff
+            {
+                Id = _editingId ?? 0,
+                Date = start,
+                Type = _newType,
+                Note = string.IsNullOrWhiteSpace(_newNote) ? null : _newNote,
+            };
+
+            if (_editingId is null)
+            {
+                await DayOffRepository.CreateAsync(dayOff);
+            }
+            else
+            {
+                await DayOffRepository.UpdateAsync(dayOff);
+            }
         }
 
         CancelEdit();
@@ -130,10 +167,24 @@ else
         await LoadAsync();
     }
 
-    private async Task DeleteAsync(int id)
+    private async Task SaveRangeAsync(DateOnly start, DateOnly end)
     {
-        await DayOffRepository.DeleteAsync(id);
-        if (_editingId == id)
+        var existingDates = (await DayOffRepository.GetByDateRangeAsync(start, end)).Select(d => d.Date).ToHashSet();
+        var note = string.IsNullOrWhiteSpace(_newNote) ? null : _newNote;
+
+        foreach (var date in DayOffGrouping.ExpandRange(start, end, existingDates))
+        {
+            await DayOffRepository.CreateAsync(new DayOff { Date = date, Type = _newType, Note = note });
+        }
+    }
+
+    private async Task DeleteGroupAsync(DayOffGroup group)
+    {
+        foreach (var day in group.Days)
+        {
+            await DayOffRepository.DeleteAsync(day.Id);
+        }
+        if (_editingId is not null && group.Days.Any(d => d.Id == _editingId))
         {
             CancelEdit();
         }

@@ -1,16 +1,18 @@
 @page "/month"
 @rendermode InteractiveServer
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
 @inject ITimeEntryRepository TimeEntryRepository
 @inject TimeSummaryService SummaryService
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudText Typo="Typo.h4" GutterBottom="true">@_anchor.ToString("MMMM yyyy")</MudText>
 
 <MudButtonGroup Class="mb-4">
-    <MudButton OnClick="@(() => ChangeMonthAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">Previous</MudButton>
-    <MudButton OnClick="@(() => ChangeMonthAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">Next</MudButton>
+    <MudButton OnClick="@(() => ChangeMonthAsync(-1))" StartIcon="@Icons.Material.Filled.ChevronLeft">@Localizer["Common_Previous"]</MudButton>
+    <MudButton OnClick="@(() => ChangeMonthAsync(1))" EndIcon="@Icons.Material.Filled.ChevronRight">@Localizer["Common_Next"]</MudButton>
 </MudButtonGroup>
 
 @if (_summary is null)
@@ -22,23 +24,20 @@ else
     <MudGrid>
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4 mb-4" Elevation="2">
-                <MudText Typo="Typo.subtitle1">
-                    Actual @_summary.ActualHours.ToString("0.##") h of @_summary.NominalHours.ToString("0.##") h nominal
-                    (weekend: @_summary.ActualWeekendHours.ToString("0.##") h, days off: @_summary.DaysOff.Count)
-                </MudText>
+                <MudText Typo="Typo.subtitle1">@FormatSummary()</MudText>
                 <MudProgressLinear Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)"
                                     Value="@ProgressPercent" Class="my-2" Size="Size.Large" />
                 <MudText Typo="Typo.body2" Color="@(_summary.DeltaHours < 0 ? Color.Warning : Color.Success)">
-                    @(_summary.DeltaHours >= 0 ? "Ahead by " : "Behind by ") @Math.Abs(_summary.DeltaHours).ToString("0.##") h
+                    @FormatDelta()
                 </MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4 mb-4" Elevation="2">
-                <MudText Typo="Typo.subtitle1" GutterBottom="true">By client</MudText>
+                <MudText Typo="Typo.subtitle1" GutterBottom="true">@Localizer["Month_ByClient"]</MudText>
                 @if (_byClient.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Nothing logged this month.</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@Localizer["Month_NothingLoggedThisMonth"]</MudText>
                 }
                 else
                 {
@@ -62,6 +61,20 @@ else
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
+    private string FormatSummary()
+    {
+        var key = _summary!.NominalDays == 1 ? "Month_SummarySingular" : "Month_SummaryPlural";
+        return Localizer[key,
+            _summary.ActualHours.ToString("0.##"), _summary.NominalHours.ToString("0.##"),
+            _summary.NominalDays, _summary.ActualWeekendHours.ToString("0.##"), _summary.DaysOff.Count];
+    }
+
+    private string FormatDelta()
+    {
+        var hours = Math.Abs(_summary!.DeltaHours).ToString("0.##");
+        return _summary.DeltaHours >= 0 ? Localizer["Common_AheadBy", hours] : Localizer["Common_BehindBy", hours];
+    }
+
     private async Task ChangeMonthAsync(int months)
     {
         _anchor = _anchor.AddMonths(months);
@@ -81,7 +94,7 @@ else
             .ToList();
         // A pie/donut chart in MudBlazor is one series whose Data has one point per label -
         // not one series per client.
-        _byClientSeries = [new ChartSeries<double> { Name = "Hours", Data = _byClient.Select(x => (double)x.Hours).ToArray() }];
+        _byClientSeries = [new ChartSeries<double> { Name = Localizer["Common_Hours"], Data = _byClient.Select(x => (double)x.Hours).ToArray() }];
         _byClientLabels = _byClient.Select(x => x.Client).ToArray();
     }
 }

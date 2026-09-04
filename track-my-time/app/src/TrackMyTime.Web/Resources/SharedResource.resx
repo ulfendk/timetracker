@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Nav -->
+  <data name="Nav_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="Nav_Week" xml:space="preserve"><value>Week</value></data>
+  <data name="Nav_Month" xml:space="preserve"><value>Month</value></data>
+  <data name="Nav_DaysOff" xml:space="preserve"><value>Days off</value></data>
+  <data name="Nav_Billing" xml:space="preserve"><value>Billing</value></data>
+  <data name="Nav_Distribution" xml:space="preserve"><value>Distribution</value></data>
+  <data name="Nav_Clients" xml:space="preserve"><value>Clients</value></data>
+  <data name="Nav_Projects" xml:space="preserve"><value>Projects</value></data>
+  <data name="Nav_Data" xml:space="preserve"><value>Data</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Settings</value></data>
+
+  <!-- Layout -->
+  <data name="Layout_SwitchToLight" xml:space="preserve"><value>Switch to light mode</value></data>
+  <data name="Layout_SwitchToDark" xml:space="preserve"><value>Switch to dark mode</value></data>
+  <data name="Layout_Language" xml:space="preserve"><value>Language</value></data>
+
+  <!-- Common -->
+  <data name="Common_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Common_SaveChanges" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common_Note" xml:space="preserve"><value>Note (optional)</value></data>
+  <data name="Common_Client" xml:space="preserve"><value>Client</value></data>
+  <data name="Common_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Common_Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Common_Archived" xml:space="preserve"><value>Archived</value></data>
+  <data name="Common_Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="Common_Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Common_Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Common_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Common_Hours" xml:space="preserve"><value>Hours</value></data>
+  <data name="Common_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Common_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Common_AheadBy" xml:space="preserve"><value>Ahead by {0} h</value></data>
+  <data name="Common_BehindBy" xml:space="preserve"><value>Behind by {0} h</value></data>
+  <data name="Common_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Common_Status" xml:space="preserve"><value>Status</value></data>
+
+  <!-- Today -->
+  <data name="Today_TodayHeading" xml:space="preserve"><value>Today</value></data>
+  <data name="Today_BackToToday" xml:space="preserve"><value>Back to today</value></data>
+  <data name="Today_ThisWeek" xml:space="preserve"><value>This week</value></data>
+  <data name="Today_LastWeek" xml:space="preserve"><value>Last week</value></data>
+  <data name="Today_LogTime" xml:space="preserve"><value>Log time</value></data>
+  <data name="Today_AddClientProjectFirst" xml:space="preserve"><value>Add a client and a project first.</value></data>
+  <data name="Today_Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Today_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Today_End" xml:space="preserve"><value>End</value></data>
+  <data name="Today_BreakMinutes" xml:space="preserve"><value>Break (minutes)</value></data>
+  <data name="Today_AddEntry" xml:space="preserve"><value>Add entry</value></data>
+  <data name="Today_MarkTodayOff" xml:space="preserve"><value>Mark today as a day off</value></data>
+  <data name="Today_MarkDayOff" xml:space="preserve"><value>Mark this day as a day off</value></data>
+  <data name="Today_LoggedTodayHeading" xml:space="preserve"><value>Logged today — {0} h</value></data>
+  <data name="Today_LoggedThatDayHeading" xml:space="preserve"><value>Logged that day — {0} h</value></data>
+  <data name="Today_NothingLoggedYet" xml:space="preserve"><value>Nothing logged yet.</value></data>
+  <data name="Today_ClientProject" xml:space="preserve"><value>Client / Project</value></data>
+  <data name="Today_Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Today_MinBreak" xml:space="preserve"><value>min break</value></data>
+  <data name="Today_StartEndRequired" xml:space="preserve"><value>Start and end time are required.</value></data>
+  <data name="Today_EndAfterStart" xml:space="preserve"><value>End time must be after start time.</value></data>
+  <data name="Today_BreakTooLong" xml:space="preserve"><value>The break can't be longer than the time worked.</value></data>
+  <data name="Today_CouldNotSave" xml:space="preserve"><value>Could not save the entry: {0}</value></data>
+
+  <!-- Week -->
+  <data name="Week_Title" xml:space="preserve"><value>Week of {0} – {1}</value></data>
+  <data name="Week_Summary" xml:space="preserve"><value>Actual {0} h of {1} h nominal (weekend: {2} h)</value></data>
+  <data name="Week_Weekend" xml:space="preserve"><value>weekend</value></data>
+  <data name="Week_DayOff" xml:space="preserve"><value>day off</value></data>
+
+  <!-- Month -->
+  <data name="Month_SummarySingular" xml:space="preserve"><value>Actual {0} h of {1} h nominal over {2} nominal day (weekend: {3} h, days off: {4})</value></data>
+  <data name="Month_SummaryPlural" xml:space="preserve"><value>Actual {0} h of {1} h nominal over {2} nominal days (weekend: {3} h, days off: {4})</value></data>
+  <data name="Month_ByClient" xml:space="preserve"><value>By client</value></data>
+  <data name="Month_NothingLoggedThisMonth" xml:space="preserve"><value>Nothing logged this month.</value></data>
+
+  <!-- Days off -->
+  <data name="DaysOff_Title" xml:space="preserve"><value>Days off</value></data>
+  <data name="DaysOff_Description" xml:space="preserve"><value>Plan or record a day off for any date — past or future — with its type. Pick an end date too to fill a whole span (e.g. a week of vacation) in one go: weekends, and any day that already has a day off recorded, are skipped automatically. For a quick "mark today as off" toggle, use the Today page instead.</value></data>
+  <data name="DaysOff_StartDate" xml:space="preserve"><value>Start date</value></data>
+  <data name="DaysOff_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="DaysOff_EndDate" xml:space="preserve"><value>End date (optional)</value></data>
+  <data name="DaysOff_NoneRecorded" xml:space="preserve"><value>No days off recorded nearby.</value></data>
+  <data name="DaysOff_Days" xml:space="preserve"><value>Days</value></data>
+  <data name="DaysOff_TypeSickness" xml:space="preserve"><value>Sickness</value></data>
+  <data name="DaysOff_TypeVacation" xml:space="preserve"><value>Vacation</value></data>
+  <data name="DaysOff_TypeOfficialHoliday" xml:space="preserve"><value>Official holiday</value></data>
+  <data name="DaysOff_TypeForcedTimeOff" xml:space="preserve"><value>Forced time off</value></data>
+
+  <!-- Billing -->
+  <data name="Billing_Title" xml:space="preserve"><value>Billing</value></data>
+  <data name="Billing_Description" xml:space="preserve"><value>Hours logged per client and project for a period — no rates, just how much to bill for.</value></data>
+  <data name="Billing_From" xml:space="preserve"><value>From</value></data>
+  <data name="Billing_To" xml:space="preserve"><value>To</value></data>
+  <data name="Billing_Generate" xml:space="preserve"><value>Generate</value></data>
+  <data name="Billing_NothingLogged" xml:space="preserve"><value>Nothing logged in this period.</value></data>
+  <data name="Billing_Total" xml:space="preserve"><value>Total</value></data>
+
+  <!-- Clients -->
+  <data name="Clients_Title" xml:space="preserve"><value>Clients</value></data>
+  <data name="Clients_NewName" xml:space="preserve"><value>New client name</value></data>
+  <data name="Clients_Name" xml:space="preserve"><value>Client name</value></data>
+  <data name="Clients_AddClient" xml:space="preserve"><value>Add client</value></data>
+
+  <!-- Projects -->
+  <data name="Projects_Title" xml:space="preserve"><value>Projects</value></data>
+  <data name="Projects_AddClientFirst" xml:space="preserve"><value>Add a client first.</value></data>
+  <data name="Projects_NewName" xml:space="preserve"><value>New project name</value></data>
+  <data name="Projects_Name" xml:space="preserve"><value>Project name</value></data>
+  <data name="Projects_AddProject" xml:space="preserve"><value>Add project</value></data>
+
+  <!-- Data -->
+  <data name="Data_Title" xml:space="preserve"><value>Data</value></data>
+  <data name="Data_ExportHeading" xml:space="preserve"><value>Export</value></data>
+  <data name="Data_ExportDescription" xml:space="preserve"><value>Downloads every client, project, time entry, day off, and nominal-hours setting as one JSON file — a backup, and the format the import below expects.</value></data>
+  <data name="Data_DownloadExport" xml:space="preserve"><value>Download export</value></data>
+  <data name="Data_ImportHeading" xml:space="preserve"><value>Import</value></data>
+  <data name="Data_ImportDescription" xml:space="preserve"><value>Loads a Track My Time export JSON file. Clients/projects are matched by name so re-importing your own data doesn't duplicate them.</value></data>
+  <data name="Data_LegacyImportHeading" xml:space="preserve"><value>Import from another time tracker</value></data>
+  <data name="Data_LegacyImportDescription" xml:space="preserve"><value>One-time conversion for a different app's export (a "dates" JSON with start/end/break intervals per day). Pick the date range to bring in and the existing client/project to assign it to, then review the same conflict preview below before applying.</value></data>
+  <data name="Data_ConvertPreview" xml:space="preserve"><value>Convert &amp; preview</value></data>
+  <data name="Data_ReviewHeading" xml:space="preserve"><value>Review before applying</value></data>
+  <data name="Data_PreviewSummary" xml:space="preserve"><value>{0} time entries, {1} days off, {2} new client(s), {3} new project(s).</value></data>
+  <data name="Data_ConflictWarning" xml:space="preserve"><value>{0} date(s) already have time entries, and {1} date(s) already have a day off recorded. Choose how to handle these before applying.</value></data>
+  <data name="Data_Skip" xml:space="preserve"><value>Skip conflicting dates — leave existing data untouched</value></data>
+  <data name="Data_Overwrite" xml:space="preserve"><value>Overwrite conflicting dates with the imported data</value></data>
+  <data name="Data_NoConflicts" xml:space="preserve"><value>No conflicting dates.</value></data>
+  <data name="Data_ApplyImport" xml:space="preserve"><value>Apply import</value></data>
+  <data name="Data_FileNotValidDocument" xml:space="preserve"><value>That file didn't contain a valid export document.</value></data>
+  <data name="Data_FileNotValidJson" xml:space="preserve"><value>That file isn't valid JSON, or isn't a Track My Time export.</value></data>
+  <data name="Data_LegacyFileNoEntries" xml:space="preserve"><value>That file didn't contain any recognizable dated entries.</value></data>
+  <data name="Data_LegacyFileNotValidJson" xml:space="preserve"><value>That file isn't valid JSON, or isn't in the expected legacy format.</value></data>
+  <data name="Data_ImportApplied" xml:space="preserve"><value>Import applied.</value></data>
+  <data name="Data_ResultMessage" xml:space="preserve"><value>Imported {0} time entries ({1} skipped), {2} days off ({3} skipped), {4} nominal-hours setting(s).</value></data>
+
+  <!-- Distribution -->
+  <data name="Distribution_Title" xml:space="preserve"><value>Distribution</value></data>
+  <data name="Distribution_Description" xml:space="preserve"><value>Actual vs. nominal hours per weekday — e.g. whether you consistently work more on some days than others.</value></data>
+  <data name="Distribution_Week" xml:space="preserve"><value>Week</value></data>
+  <data name="Distribution_Month" xml:space="preserve"><value>Month</value></data>
+  <data name="Distribution_Actual" xml:space="preserve"><value>Actual</value></data>
+  <data name="Distribution_Nominal" xml:space="preserve"><value>Nominal</value></data>
+  <data name="Distribution_Mon" xml:space="preserve"><value>Mon</value></data>
+  <data name="Distribution_Tue" xml:space="preserve"><value>Tue</value></data>
+  <data name="Distribution_Wed" xml:space="preserve"><value>Wed</value></data>
+  <data name="Distribution_Thu" xml:space="preserve"><value>Thu</value></data>
+  <data name="Distribution_Fri" xml:space="preserve"><value>Fri</value></data>
+  <data name="Distribution_Sat" xml:space="preserve"><value>Sat</value></data>
+  <data name="Distribution_Sun" xml:space="preserve"><value>Sun</value></data>
+
+  <!-- Settings -->
+  <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_HAIntegration" xml:space="preserve"><value>Home Assistant integration</value></data>
+  <data name="Settings_MqttConnected" xml:space="preserve"><value>connected</value></data>
+  <data name="Settings_MqttNotConnected" xml:space="preserve"><value>not connected</value></data>
+  <data name="Settings_HADescription" xml:space="preserve"><value>Requires an MQTT broker configured in Home Assistant (e.g. the Mosquitto broker app) — Track My Time discovers it automatically and needs no setup here.</value></data>
+  <data name="Settings_NominalHoursHistory" xml:space="preserve"><value>Nominal hours history</value></data>
+  <data name="Settings_NominalHoursDescription" xml:space="preserve"><value>Your contracted weekly hours (e.g. 37.5). Add a new entry when it changes — history is kept so past weeks/months are still compared against the rate that applied at the time.</value></data>
+  <data name="Settings_EffectiveFrom" xml:space="preserve"><value>Effective from</value></data>
+  <data name="Settings_WeeklyHours" xml:space="preserve"><value>Weekly hours</value></data>
+  <data name="Settings_DuplicateEffectiveFrom" xml:space="preserve"><value>Another nominal-hours entry is already effective from that date.</value></data>
+
+  <!-- Not found / error banner -->
+  <data name="NotFound_Title" xml:space="preserve"><value>Not Found</value></data>
+  <data name="NotFound_Message" xml:space="preserve"><value>Sorry, the content you are looking for does not exist.</value></data>
+  <data name="ErrorBanner_Message" xml:space="preserve"><value>An unhandled error has occurred.</value></data>
+  <data name="ErrorBanner_Reload" xml:space="preserve"><value>Reload</value></data>
+</root>

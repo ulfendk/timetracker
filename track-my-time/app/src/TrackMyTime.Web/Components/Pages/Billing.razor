@@ -1,26 +1,26 @@
 @page "/billing"
 @rendermode InteractiveServer
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
 @inject ITimeEntryRepository TimeEntryRepository
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Billing</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-    Hours logged per client and project for a period — no rates, just how much to bill for.
-</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Billing_Title"]</MudText>
+<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">@Localizer["Billing_Description"]</MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudGrid>
         <MudItem xs="12" sm="4">
-            <MudDatePicker Label="From" @bind-Date="_fromDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+            <MudDatePicker Label="@Localizer["Billing_From"]" @bind-Date="_fromDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudDatePicker Label="To" @bind-Date="_toDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
+            <MudDatePicker Label="@Localizer["Billing_To"]" @bind-Date="_toDate" FirstDayOfWeek="DayOfWeek.Monday" ShowWeekNumbers="true" />
         </MudItem>
         <MudItem xs="12" sm="4" Class="d-flex align-center">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadAsync"
                        Disabled="@(_fromDate is null || _toDate is null)">
-                Generate
+                @Localizer["Billing_Generate"]
             </MudButton>
         </MudItem>
     </MudGrid>
@@ -32,15 +32,15 @@
 }
 else if (_rows.Count == 0)
 {
-    <MudText Typo="Typo.body2" Color="Color.Secondary">Nothing logged in this period.</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary">@Localizer["Billing_NothingLogged"]</MudText>
 }
 else
 {
     <MudTable Items="_rows" Dense="true" Hover="true">
         <HeaderContent>
-            <MudTh>Client</MudTh>
-            <MudTh>Project</MudTh>
-            <MudTh>Hours</MudTh>
+            <MudTh>@Localizer["Common_Client"]</MudTh>
+            <MudTh>@Localizer["Common_Project"]</MudTh>
+            <MudTh>@Localizer["Common_Hours"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>@context.Client</MudTd>
@@ -48,7 +48,7 @@ else
             <MudTd>@context.Hours.ToString("0.##")</MudTd>
         </RowTemplate>
         <FooterContent>
-            <MudTd Class="mud-table-cell-custom-group">Total</MudTd>
+            <MudTd Class="mud-table-cell-custom-group">@Localizer["Billing_Total"]</MudTd>
             <MudTd></MudTd>
             <MudTd>@_rows.Sum(r => r.Hours).ToString("0.##")</MudTd>
         </FooterContent>

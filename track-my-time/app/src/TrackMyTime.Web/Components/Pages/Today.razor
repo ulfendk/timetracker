@@ -1,6 +1,8 @@
 @page "/"
+@page "/day/{DateParam?}"
 @rendermode InteractiveServer
 @using Microsoft.Data.Sqlite
+@using Microsoft.Extensions.Localization
 @using TrackMyTime.Web.Models
 @using TrackMyTime.Web.Repositories
 @using TrackMyTime.Web.Services
@@ -10,8 +12,22 @@
 @inject TimeSummaryService SummaryService
 @inject MqttPublisherService MqttPublisher
 @inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedResource> Localizer
 
-<MudText Typo="Typo.h4" GutterBottom="true">Today — @_date.ToString("dddd, d MMMM")</MudText>
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="3">
+    <MudAvatar Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large">
+        <MudIcon Icon="@(IsToday ? Icons.Material.Filled.WbSunny : Icons.Material.Filled.Event)" />
+    </MudAvatar>
+    <div>
+        <MudText Typo="Typo.h4">@(IsToday ? Localizer["Today_TodayHeading"] : _date.ToString("dddd"))</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@_date.ToString("d MMMM yyyy")</MudText>
+    </div>
+    <MudSpacer />
+    @if (!IsToday)
+    {
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Today" Href="/">@Localizer["Today_BackToToday"]</MudButton>
+    }
+</MudStack>
 
 @if (_projects is null)
 {
@@ -19,18 +35,35 @@
 }
 else
 {
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.overline" Color="Color.Secondary">@Localizer["Today_ThisWeek"]</MudText>
+                <MudText Typo="Typo.h6">@FormatWeek(_thisWeek)</MudText>
+                <MudText Typo="Typo.body2" Color="@DeltaColor(_thisWeek)">@FormatDelta(_thisWeek)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.overline" Color="Color.Secondary">@Localizer["Today_LastWeek"]</MudText>
+                <MudText Typo="Typo.h6">@FormatWeek(_lastWeek)</MudText>
+                <MudText Typo="Typo.body2" Color="@DeltaColor(_lastWeek)">@FormatDelta(_lastWeek)</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
     <MudGrid>
         <MudItem xs="12" md="5">
             <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" GutterBottom="true">Log time</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Today_LogTime"]</MudText>
 
                 @if (_projects.Count == 0)
                 {
-                    <MudAlert Severity="Severity.Info">Add a client and a project first.</MudAlert>
+                    <MudAlert Severity="Severity.Info">@Localizer["Today_AddClientProjectFirst"]</MudAlert>
                 }
                 else
                 {
-                    <MudSelect T="int" Label="Project" @bind-Value="_form.ProjectId" Class="mb-3">
+                    <MudSelect T="int" Label="@Localizer["Today_Project"]" @bind-Value="_form.ProjectId" Class="mb-3">
                         @foreach (var project in _projects)
                         {
                             <MudSelectItem T="int" Value="@project.Id">@project.ClientName — @project.Name</MudSelectItem>
@@ -38,44 +71,49 @@ else
                     </MudSelect>
                     <MudGrid Class="mb-3">
                         <MudItem xs="6">
-                            <MudTimePicker Label="Start" @bind-Time="_form.Start" Editable="true" />
+                            <MudTimePicker Label="@Localizer["Today_Start"]" @bind-Time="_form.Start" Editable="true" />
                         </MudItem>
                         <MudItem xs="6">
-                            <MudTimePicker Label="End" @bind-Time="_form.End" Editable="true" />
+                            <MudTimePicker Label="@Localizer["Today_End"]" @bind-Time="_form.End" Editable="true" />
                         </MudItem>
                     </MudGrid>
-                    <MudNumericField T="int" Label="Break (minutes)" @bind-Value="_form.BreakMinutes" Min="0" Class="mb-3" />
-                    <MudTextField Label="Note (optional)" @bind-Value="_form.Note" Class="mb-3" />
+                    <MudNumericField T="int" Label="@Localizer["Today_BreakMinutes"]" @bind-Value="_form.BreakMinutes" Min="0" Class="mb-3" />
+                    <MudTextField Label="@Localizer["Common_Note"]" @bind-Value="_form.Note" Class="mb-3" />
                     @if (_formError is not null)
                     {
                         <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true">@_formError</MudAlert>
                     }
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveEntryAsync" Disabled="@(_form.ProjectId == 0)">
-                        Add entry
+                        @Localizer["Today_AddEntry"]
                     </MudButton>
                 }
 
                 <MudDivider Class="my-4" />
 
-                <MudSwitch T="bool" Value="_isDayOff" ValueChanged="ToggleDayOffAsync" Color="Color.Primary" Label="Mark today as a day off" />
+                <MudSwitch T="bool" Value="_isDayOff" ValueChanged="ToggleDayOffAsync" Color="Color.Primary"
+                           Label="@(IsToday ? Localizer["Today_MarkTodayOff"] : Localizer["Today_MarkDayOff"])" />
             </MudPaper>
         </MudItem>
 
         <MudItem xs="12" md="7">
             <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h6" GutterBottom="true">Logged today — @_totalHours.ToString("0.##") h</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">
+                    @(IsToday
+                        ? Localizer["Today_LoggedTodayHeading", _totalHours.ToString("0.##")]
+                        : Localizer["Today_LoggedThatDayHeading", _totalHours.ToString("0.##")])
+                </MudText>
                 @if (_entries!.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Color="Color.Secondary">Nothing logged yet.</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@Localizer["Today_NothingLoggedYet"]</MudText>
                 }
                 else
                 {
                     <MudTable Items="_entries" Dense="true" Hover="true">
                         <HeaderContent>
-                            <MudTh>Client / Project</MudTh>
-                            <MudTh>Time</MudTh>
-                            <MudTh>Hours</MudTh>
-                            <MudTh>Note</MudTh>
+                            <MudTh>@Localizer["Today_ClientProject"]</MudTh>
+                            <MudTh>@Localizer["Today_Time"]</MudTh>
+                            <MudTh>@Localizer["Common_Hours"]</MudTh>
+                            <MudTh>@Localizer["Common_Note"]</MudTh>
                             <MudTh></MudTh>
                         </HeaderContent>
                         <RowTemplate>
@@ -86,7 +124,7 @@ else
                                     @($"{context.StartTime:HH:mm}–{context.EndTime:HH:mm}")
                                     @if (context.BreakMinutes is > 0)
                                     {
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">(@context.BreakMinutes min break)</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">(@context.BreakMinutes @Localizer["Today_MinBreak"])</MudText>
                                     }
                                 }
                             </MudTd>
@@ -104,15 +142,28 @@ else
 }
 
 @code {
-    private readonly DateOnly _date = DateOnly.FromDateTime(DateTime.Now);
+    [Parameter]
+    public string? DateParam { get; set; }
+
+    private DateOnly _date;
     private List<ProjectWithClient>? _projects;
     private List<TimeEntryWithNames>? _entries = [];
     private decimal _totalHours;
     private bool _isDayOff;
+    private PeriodSummary? _thisWeek;
+    private PeriodSummary? _lastWeek;
     private readonly NewEntryForm _form = new();
     private string? _formError;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private bool IsToday => _date == DateOnly.FromDateTime(DateTime.Now);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _date = DateParam is not null && DateOnly.TryParseExact(DateParam, "yyyy-MM-dd", out var parsed)
+            ? parsed
+            : DateOnly.FromDateTime(DateTime.Now);
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -121,18 +172,36 @@ else
         _entries = summary.Entries.ToList();
         _totalHours = summary.TotalHours;
         _isDayOff = summary.IsDayOff;
+        _thisWeek = await SummaryService.GetWeekAsync(_date);
+        _lastWeek = await SummaryService.GetWeekAsync(_date, weeksOffset: -1);
         if (_form.ProjectId == 0 && _projects.Count > 0)
         {
             _form.ProjectId = _projects[0].Id;
         }
     }
 
+    private string FormatWeek(PeriodSummary? summary) =>
+        summary is null ? "—" : $"{summary.ActualHours:0.##} / {summary.NominalHours:0.##} h";
+
+    private string FormatDelta(PeriodSummary? summary)
+    {
+        if (summary is null)
+        {
+            return string.Empty;
+        }
+        var hours = Math.Abs(summary.DeltaHours).ToString("0.##");
+        return summary.DeltaHours >= 0 ? Localizer["Common_AheadBy", hours] : Localizer["Common_BehindBy", hours];
+    }
+
+    private static Color DeltaColor(PeriodSummary? summary) =>
+        summary is { DeltaHours: < 0 } ? Color.Warning : Color.Success;
+
     private async Task SaveEntryAsync()
     {
         _formError = null;
         if (_form.ProjectId == 0 || _form.Start is null || _form.End is null)
         {
-            _formError = "Start and end time are required.";
+            _formError = Localizer["Today_StartEndRequired"];
             return;
         }
 
@@ -140,14 +209,14 @@ else
         var end = TimeOnly.FromTimeSpan(_form.End.Value);
         if (end <= start)
         {
-            _formError = "End time must be after start time.";
+            _formError = Localizer["Today_EndAfterStart"];
             return;
         }
 
         var minutes = (int)(end - start).TotalMinutes - _form.BreakMinutes;
         if (minutes <= 0)
         {
-            _formError = "The break can't be longer than the time worked.";
+            _formError = Localizer["Today_BreakTooLong"];
             return;
         }
 
@@ -166,7 +235,7 @@ else
         }
         catch (SqliteException ex)
         {
-            _formError = $"Could not save the entry: {ex.Message}";
+            _formError = Localizer["Today_CouldNotSave", ex.Message];
             return;
         }
 

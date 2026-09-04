@@ -230,4 +230,34 @@ public class RepositoryTests(DatabaseFixture fixture)
         Assert.Equal(37.5m, week.NominalHours);
         Assert.Equal(8m, week.ActualWeekdayHours);
     }
+
+    [Fact]
+    public async Task TimeSummaryService_GetWeekAsync_WeeksOffsetLooksAtAnEarlierWeek()
+    {
+        var clients = new ClientRepository(fixture.ConnectionFactory);
+        var projects = new ProjectRepository(fixture.ConnectionFactory);
+        var entries = new TimeEntryRepository(fixture.ConnectionFactory);
+        var daysOff = new DayOffRepository(fixture.ConnectionFactory);
+        var nominalHours = new NominalHoursRepository(fixture.ConnectionFactory);
+
+        var clientId = await clients.CreateAsync(new Client { Name = "Contoso" });
+        var projectId = await projects.CreateAsync(new Project { ClientId = clientId, Name = "Support" });
+        // A distinct EffectiveFrom from other tests in this collection, which share one database.
+        await nominalHours.CreateAsync(new NominalHoursSetting { EffectiveFrom = new DateOnly(2021, 1, 1), WeeklyHours = 37.5m });
+
+        // Monday of a known week, and the Monday of the week before it - distinct from the week
+        // used by other tests in this shared-database collection.
+        var thisMonday = new DateOnly(2033, 3, 7);
+        var lastMonday = thisMonday.AddDays(-7);
+        await entries.CreateAsync(new TimeEntry { Date = thisMonday, ProjectId = projectId, DurationMinutes = 4 * 60 });
+        await entries.CreateAsync(new TimeEntry { Date = lastMonday, ProjectId = projectId, DurationMinutes = 6 * 60 });
+
+        var summaryService = new TimeSummaryService(entries, daysOff, nominalHours);
+        var thisWeek = await summaryService.GetWeekAsync(thisMonday);
+        var lastWeek = await summaryService.GetWeekAsync(thisMonday, weeksOffset: -1);
+
+        Assert.Equal(4m, thisWeek.ActualWeekdayHours);
+        Assert.Equal(6m, lastWeek.ActualWeekdayHours);
+        Assert.Equal(lastMonday, lastWeek.From);
+    }
 }

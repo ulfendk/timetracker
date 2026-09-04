@@ -1,14 +1,17 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResource> Localizer
+
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Today">Today</MudNavLink>
-    <MudNavLink Href="week" Icon="@Icons.Material.Filled.ViewWeek">Week</MudNavLink>
-    <MudNavLink Href="month" Icon="@Icons.Material.Filled.CalendarMonth">Month</MudNavLink>
-    <MudNavLink Href="days-off" Icon="@Icons.Material.Filled.EventBusy">Days off</MudNavLink>
-    <MudNavLink Href="billing" Icon="@Icons.Material.Filled.Receipt">Billing</MudNavLink>
-    <MudNavLink Href="distribution" Icon="@Icons.Material.Filled.BarChart">Distribution</MudNavLink>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Today">@Localizer["Nav_Today"]</MudNavLink>
+    <MudNavLink Href="week" Icon="@Icons.Material.Filled.ViewWeek">@Localizer["Nav_Week"]</MudNavLink>
+    <MudNavLink Href="month" Icon="@Icons.Material.Filled.CalendarMonth">@Localizer["Nav_Month"]</MudNavLink>
+    <MudNavLink Href="days-off" Icon="@Icons.Material.Filled.EventBusy">@Localizer["Nav_DaysOff"]</MudNavLink>
+    <MudNavLink Href="billing" Icon="@Icons.Material.Filled.Receipt">@Localizer["Nav_Billing"]</MudNavLink>
+    <MudNavLink Href="distribution" Icon="@Icons.Material.Filled.BarChart">@Localizer["Nav_Distribution"]</MudNavLink>
     <MudDivider Class="my-2" />
-    <MudNavLink Href="clients" Icon="@Icons.Material.Filled.Business">Clients</MudNavLink>
-    <MudNavLink Href="projects" Icon="@Icons.Material.Filled.Folder">Projects</MudNavLink>
+    <MudNavLink Href="clients" Icon="@Icons.Material.Filled.Business">@Localizer["Nav_Clients"]</MudNavLink>
+    <MudNavLink Href="projects" Icon="@Icons.Material.Filled.Folder">@Localizer["Nav_Projects"]</MudNavLink>
     <MudDivider Class="my-2" />
-    <MudNavLink Href="data" Icon="@Icons.Material.Filled.ImportExport">Data</MudNavLink>
-    <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+    <MudNavLink Href="data" Icon="@Icons.Material.Filled.ImportExport">@Localizer["Nav_Data"]</MudNavLink>
+    <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">@Localizer["Nav_Settings"]</MudNavLink>
 </MudNavMenu>
