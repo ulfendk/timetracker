@@ -48,36 +48,63 @@ With an MQTT broker available, these sensors appear automatically:
 | `month_actual_hours`     | Hours logged this month                     |
 | `month_nominal_hours`    | This month's nominal target                 |
 | `month_delta_hours`      | Actual minus nominal                        |
+| `sick_days_ytd`          | Sick days recorded this calendar year       |
+| `vacation_days_ytd`      | Vacation days recorded this calendar year   |
 
-### Dashboard card: this week's hours vs. nominal
+By default, Home Assistant's entity ID for each is `sensor.<device slug>_<object_id>` - the
+device slug comes from this app's device name, "Track My Time", so e.g. `week_actual_hours`
+becomes `sensor.track_my_time_tmt_week_actual_hours` (the `tmt_` comes from each sensor's own
+discovery name, "TMT Week Actual Hours"). Check **Developer tools → States** to confirm yours
+match, especially if you're running a [second instance](#tracking-a-second-person) with a
+different device name.
 
-A simple overview card for a Lovelace dashboard, using the [Mushroom
+### Dashboard card: hours and days off at a glance
+
+A compact overview card for a Lovelace dashboard, using the [Mushroom
 cards](https://github.com/piitaya/lovelace-mushroom) (install via HACS first). Copy this into a
-dashboard's YAML (e.g. add a manual card, then "Edit in YAML"):
+dashboard's YAML (e.g. add a manual card, then "Edit in YAML") and adjust the entity IDs per the
+note above if yours differ:
 
 ```yaml
 type: custom:mushroom-template-card
-primary: This week
+primary: Work
 secondary: >-
-  {{ states('sensor.tmt_week_actual_hours') }} / {{ states('sensor.tmt_week_nominal_hours') }} h
-  ({{ '+' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else '' }}{{ states('sensor.tmt_week_delta_hours') }} h)
+  📅 Week: {{ states('sensor.track_my_time_tmt_week_actual_hours') }} / {{
+  states('sensor.track_my_time_tmt_week_nominal_hours') }} h ({{ '+' if
+  states('sensor.track_my_time_tmt_week_delta_hours') | float(0) >= 0 else ''
+  }}{{ states('sensor.track_my_time_tmt_week_delta_hours') }} h)
+
+  📆 Month: {{ states('sensor.track_my_time_tmt_month_actual_hours') }} / {{
+  states('sensor.track_my_time_tmt_month_nominal_hours') }} h ({{ '+' if
+  states('sensor.track_my_time_tmt_month_delta_hours') | float(0) >= 0 else ''
+  }}{{ states('sensor.track_my_time_tmt_month_delta_hours') }} h)
+
+  🏖️ Days off (YTD): {{ ((states('sensor.track_my_time_tmt_vacation_days_ytd')
+  | float(0)) + (states('sensor.track_my_time_tmt_sick_days_ytd') | float(0)))
+  | int }} d ({{ states('sensor.track_my_time_tmt_vacation_days_ytd') }}
+  vacation + {{ states('sensor.track_my_time_tmt_sick_days_ytd') }} sick)
 icon: mdi:calendar-week
 icon_color: >-
-  {{ 'green' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else 'orange' }}
+  {{ 'green' if states('sensor.track_my_time_tmt_week_delta_hours') | float(0)
+  >= 0 else 'orange' }}
 badge_icon: >-
-  {{ 'mdi:arrow-up-bold' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else 'mdi:arrow-down-bold' }}
+  {{ 'mdi:arrow-up-bold' if states('sensor.track_my_time_tmt_week_delta_hours')
+  | float(0) >= 0 else 'mdi:arrow-down-bold' }}
 badge_color: >-
-  {{ 'green' if states('sensor.tmt_week_delta_hours') | float(0) >= 0 else 'orange' }}
-tap_action:
+  {{ 'green' if states('sensor.track_my_time_tmt_week_delta_hours') | float(0)
+  >= 0 else 'orange' }}
+multiline_secondary: true
+grid_options:
+  columns: full
+entity: sensor.track_my_time_tmt_week_actual_hours
+icon_tap_action:
   action: more-info
-  entity: sensor.tmt_week_actual_hours
 ```
 
-Renders as e.g. "This week — 6.75 / 37.5 h (+6.75 h)", turning orange when behind nominal. The
-entity IDs above are Home Assistant's default slug of each sensor's discovery name (e.g. "TMT
-Week Actual Hours" → `sensor.tmt_week_actual_hours`) - check **Developer tools → States** and
-adjust if you had same-named entities before installing this app, since HA suffixes those
-(`_2`, `_3`, ...) instead of reusing them.
+Renders as three lines - week and month actual/nominal/delta, plus a year-to-date days-off
+breakdown - with the icon and badge turning orange whenever this week is behind nominal. Trim it
+down to just the week line (drop the month/days-off paragraphs from `secondary`) if you'd rather
+match the simpler single-line version from earlier releases.
 
 ## Data & backups
 
