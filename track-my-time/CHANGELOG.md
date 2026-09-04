@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5
+
+Documentation only: DOCS.md's dashboard card now shows week, month, and year-to-date days off
+in one card instead of just the week line, and its entity ID guidance is corrected (Home
+Assistant always prefixes with the device slug, e.g. `sensor.track_my_time_tmt_week_actual_hours`).
+The entity table also gained the two days-off sensors it was missing.
+
 ## 0.3.4
 
 Documentation only: DOCS.md now has a copy/paste Mushroom dashboard card for a "this week's
