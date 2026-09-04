@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+Week view redesigned as a card list (icon, hours, weekend/day-off status, an edit button to jump
+straight into that day), with a month divider when a week spans two months. The Today page now
+doubles as a day-editor for any date, and shows this week's numbers alongside last week's. Month
+view shows a nominal-days count next to nominal hours. Days off supports adding a date range in
+one go (weekends and already-recorded days are skipped automatically) and collapses consecutive
+same-type entries into one row with a total day count. Added a dark mode toggle, defaulting to the
+system setting. Added a Danish translation with a language switcher, which also fixes decimal
+numbers to use a comma in Danish (both for display and for typing them into the Weekly hours
+field).
+
 ## 0.2.0
 
 Nominal-hours settings, clients, and projects can now be edited (not just added). Time is logged
