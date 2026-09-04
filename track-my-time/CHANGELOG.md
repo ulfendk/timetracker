@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4
+
+Documentation only: DOCS.md now has a copy/paste Mushroom dashboard card for a "this week's
+hours vs. nominal" overview, right after the Home Assistant entities table.
+
 ## 0.3.3
 
 Week-view day cards now list each logged entry's start-end span (with a break-minutes note when
