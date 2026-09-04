@@ -86,9 +86,15 @@ else
                     {
                         <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true">@_formError</MudAlert>
                     }
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveEntryAsync" Disabled="@(_form.ProjectId == 0)">
-                        @Localizer["Today_AddEntry"]
-                    </MudButton>
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveEntryAsync" Disabled="@(_form.ProjectId == 0)">
+                            @(_editingId is null ? Localizer["Today_AddEntry"] : Localizer["Common_SaveChanges"])
+                        </MudButton>
+                        @if (_editingId is not null)
+                        {
+                            <MudButton Variant="Variant.Text" OnClick="CancelEdit">@Localizer["Common_Cancel"]</MudButton>
+                        }
+                    </MudStack>
                 }
 
                 <MudDivider Class="my-4" />
@@ -134,6 +140,7 @@ else
                             <MudTd>@((context.DurationMinutes / 60m).ToString("0.##"))</MudTd>
                             <MudTd>@context.Note</MudTd>
                             <MudTd>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => StartEdit(context))" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteEntryAsync(context.Id))" />
                             </MudTd>
                         </RowTemplate>
@@ -157,6 +164,7 @@ else
     private PeriodSummary? _lastWeek;
     private readonly NewEntryForm _form = new();
     private string? _formError;
+    private int? _editingId;
 
     private bool IsToday => _date == DateOnly.FromDateTime(DateTime.Now);
 
@@ -223,18 +231,28 @@ else
             return;
         }
 
+        var entry = new TimeEntry
+        {
+            Id = _editingId ?? 0,
+            Date = _date,
+            ProjectId = _form.ProjectId,
+            DurationMinutes = minutes,
+            Note = string.IsNullOrWhiteSpace(_form.Note) ? null : _form.Note,
+            StartTime = start,
+            EndTime = end,
+            BreakMinutes = _form.BreakMinutes,
+        };
+
         try
         {
-            await TimeEntryRepository.CreateAsync(new TimeEntry
+            if (_editingId is null)
             {
-                Date = _date,
-                ProjectId = _form.ProjectId,
-                DurationMinutes = minutes,
-                Note = string.IsNullOrWhiteSpace(_form.Note) ? null : _form.Note,
-                StartTime = start,
-                EndTime = end,
-                BreakMinutes = _form.BreakMinutes,
-            });
+                await TimeEntryRepository.CreateAsync(entry);
+            }
+            else
+            {
+                await TimeEntryRepository.UpdateAsync(entry);
+            }
         }
         catch (SqliteException ex)
         {
@@ -242,16 +260,38 @@ else
             return;
         }
 
-        _form.Start = null;
-        _form.End = null;
-        _form.BreakMinutes = 0;
-        _form.Note = null;
+        CancelEdit();
         MqttPublisher.RequestRefresh();
         await LoadAsync();
     }
 
+    private void StartEdit(TimeEntryWithNames entry)
+    {
+        _editingId = entry.Id;
+        _form.ProjectId = entry.ProjectId;
+        _form.Start = entry.StartTime?.ToTimeSpan();
+        _form.End = entry.EndTime?.ToTimeSpan();
+        _form.BreakMinutes = entry.BreakMinutes ?? 0;
+        _form.Note = entry.Note;
+        _formError = null;
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _form.Start = null;
+        _form.End = null;
+        _form.BreakMinutes = 0;
+        _form.Note = null;
+        _formError = null;
+    }
+
     private async Task DeleteEntryAsync(int id)
     {
+        if (_editingId == id)
+        {
+            CancelEdit();
+        }
         await TimeEntryRepository.DeleteAsync(id);
         MqttPublisher.RequestRefresh();
         await LoadAsync();
