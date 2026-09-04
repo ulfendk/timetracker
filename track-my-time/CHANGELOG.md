@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+Each day card in the week view now shows a small weekday indicator (7 boxes, the current day's
+box colored in) alongside its icon. Fixed a bug where clicking the edit button on a week-view day
+card, or "back to today" from the day view, 404'd when running behind Home Assistant's ingress
+proxy - both used an absolute link instead of one relative to the app's ingress path. Also fixed a
+crash if the dark-mode preference stored in the browser could no longer be decrypted (e.g. after
+`/data` is wiped) - it now just falls back to the system preference instead of taking the page
+down.
+
 ## 0.3.0
 
 Week view redesigned as a card list (icon, hours, weekend/day-off status, an edit button to jump
