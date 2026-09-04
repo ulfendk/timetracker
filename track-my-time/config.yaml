@@ -1,5 +1,5 @@
 name: Track My Time
-version: "0.3.2"
+version: "0.3.3"
 slug: track_my_time
 description: Track consultancy hours per client/project and compare them against your nominal weekly hours.
 url: https://github.com/ulfendk/timetracker

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+
+Week-view day cards now list each logged entry's start-end span (with a break-minutes note when
+one was recorded) instead of just a total hours figure.
+
 ## 0.3.2
 
 The day view's logged-time list now has an edit button, not just delete - it loads the entry
