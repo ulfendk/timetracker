@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+The day view's logged-time list now has an edit button, not just delete - it loads the entry
+back into the "Log time" form (project, start/end, break, note) so you can correct a mistake
+instead of deleting and re-adding it.
+
 ## 0.3.1
 
 Each day card in the week view now shows a small weekday indicator (7 boxes, the current day's
