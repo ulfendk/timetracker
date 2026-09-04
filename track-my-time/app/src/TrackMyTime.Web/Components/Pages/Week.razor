@@ -73,6 +73,11 @@ else
                             <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="ml-2">@Localizer["Week_DayOff"]</MudChip>
                         }
                     </MudText>
+                    @{ var spans = TimeSpans(day); }
+                    @if (spans.Count > 0)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@string.Join(" · ", spans)</MudText>
+                    }
                 </div>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditDay(day.Date))" />
             </MudCardContent>
@@ -111,13 +116,32 @@ else
 
         var entries = await TimeEntryRepository.GetByDateRangeAsync(_from, _to);
         var daysOff = (await DayOffRepository.GetByDateRangeAsync(_from, _to)).Select(d => d.Date).ToHashSet();
-        var hoursByDay = entries.GroupBy(e => e.Date).ToDictionary(g => g.Key, g => g.Sum(e => e.DurationMinutes) / 60m);
+        var entriesByDay = entries.ToLookup(e => e.Date);
 
         _days = [];
         for (var day = _from; day <= _to; day = day.AddDays(1))
         {
-            _days.Add(new DayRow(day, hoursByDay.GetValueOrDefault(day), daysOff.Contains(day)));
+            var dayEntries = entriesByDay[day].ToList();
+            var hours = dayEntries.Sum(e => e.DurationMinutes) / 60m;
+            _days.Add(new DayRow(day, hours, daysOff.Contains(day), dayEntries));
         }
+    }
+
+    // Only entries with recorded start/end times can show a span - older entries logged before
+    // that existed (or imported as a plain duration) display via the "X h" total only, same as
+    // the day view.
+    private List<string> TimeSpans(DayRow day) => day.Entries
+        .Where(e => e.StartTime is not null && e.EndTime is not null)
+        .OrderBy(e => e.StartTime)
+        .Select(FormatSpan)
+        .ToList();
+
+    private string FormatSpan(TimeEntryWithNames entry)
+    {
+        var span = $"{entry.StartTime:HH:mm}–{entry.EndTime:HH:mm}";
+        return entry.BreakMinutes is > 0
+            ? $"{span} ({entry.BreakMinutes} {Localizer["Today_MinBreak"]})"
+            : span;
     }
 
     // Relative (no leading "/"), not absolute: this app runs behind Home Assistant's ingress
@@ -141,5 +165,5 @@ else
         ? Icons.Material.Filled.EventBusy
         : NominalHoursCalculator.IsWeekend(day.Date) ? Icons.Material.Filled.Weekend : Icons.Material.Filled.Work;
 
-    private sealed record DayRow(DateOnly Date, decimal Hours, bool IsDayOff);
+    private sealed record DayRow(DateOnly Date, decimal Hours, bool IsDayOff, IReadOnlyList<TimeEntryWithNames> Entries);
 }
