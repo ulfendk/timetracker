@@ -25,7 +25,10 @@
     <MudSpacer />
     @if (!IsToday)
     {
-        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Today" Href="/">@Localizer["Today_BackToToday"]</MudButton>
+        @* Relative (no leading "/"), not absolute - see the comment on Week.razor's EditDay for
+           why: an absolute href bypasses <base href> and 404s under Home Assistant's ingress
+           proxy. Matches NavMenu.razor's own relative Href="" for the same Today route. *@
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Today" Href="">@Localizer["Today_BackToToday"]</MudButton>
     }
 </MudStack>
 

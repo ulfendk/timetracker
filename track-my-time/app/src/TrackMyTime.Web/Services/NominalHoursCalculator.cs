@@ -125,7 +125,8 @@ public static class NominalHoursCalculator
             .ToList();
     }
 
-    private static int MondayFirstIndex(DayOfWeek dayOfWeek) => ((int)dayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+    /// <summary>0-based Monday-first position of a weekday (Monday = 0 ... Sunday = 6).</summary>
+    public static int MondayFirstIndex(DayOfWeek dayOfWeek) => ((int)dayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
 }
 
 /// <summary>Actual vs. nominal hours for a single weekday, summed across a date range.</summary>

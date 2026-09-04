@@ -1,0 +1,32 @@
+/* Weekday-position overlay on each day card's avatar (7 small boxes, Mon-Sun, the current day's
+   box colored in) - a shopping-app-style at-a-glance indicator of where in the week a day falls,
+   on top of the existing icon which only conveys work/weekend/day-off status. */
+
+.weekday-avatar {
+    position: relative;
+    display: inline-flex;
+}
+
+.weekday-dots {
+    position: absolute;
+    left: 50%;
+    bottom: -3px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1px;
+    padding: 2px 3px;
+    border-radius: 4px;
+    background-color: var(--mud-palette-surface);
+    box-shadow: 0 0 0 1px var(--mud-palette-lines-default);
+}
+
+.weekday-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 1px;
+    background-color: var(--mud-palette-lines-default);
+}
+
+.weekday-dot-active {
+    background-color: var(--mud-palette-primary);
+}
