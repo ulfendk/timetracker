@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.6
+
+The day view now shows a "Week to date" figure alongside "This week"/"Last week" - nominal
+hours pro-rated to the Monday-through-today span (e.g. 3/5 of the week on a Wednesday), with any
+day off already marked that week excluded, so you can tell whether you're on pace mid-week.
+
 ## 0.3.5
 
 Documentation only: DOCS.md's dashboard card now shows week, month, and year-to-date days off
