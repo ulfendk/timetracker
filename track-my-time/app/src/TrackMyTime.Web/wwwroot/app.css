@@ -55,3 +55,13 @@ h1:focus {
     right: 0.75rem;
     top: 0.5rem;
 }
+
+/* Every "card" surface in the app (stat panels, forms, tables, week-view day cards) is a
+   MudPaper or MudCard sitting at elevation 1 or 2 - see MainLayout.razor's theme comment for why
+   its shadow alone wasn't enough to read as a bounded, raised surface. This adds a visible
+   border on top of it, scoped by elevation class (not just .mud-paper) so floating surfaces at
+   higher elevations - popovers, menus, dialogs, tooltips - are left untouched. */
+.mud-paper.mud-elevation-1,
+.mud-paper.mud-elevation-2 {
+    border: 1px solid var(--mud-palette-lines-default);
+}

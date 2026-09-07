@@ -48,22 +48,45 @@
 @code {
     // Loosely echoes Home Assistant's own Material palette (its default primary blue) so the
     // app doesn't feel like a foreign tool bolted onto an HA dashboard.
-    private readonly MudTheme _theme = new()
+    private static readonly MudTheme _theme = BuildTheme();
+
+    private static MudTheme BuildTheme()
     {
-        PaletteLight = new MudBlazor.PaletteLight
+        // MudBlazor's stock light theme sets Background and Surface to the same white, and its
+        // Material elevation shadows are subtle enough to nearly vanish against it - every
+        // MudPaper/MudCard "card" in the app read as an almost invisible outline (see the
+        // screenshot in the PR/issue that prompted this). Giving Background a faint gray tint
+        // distinct from Surface (white) is what actually makes a card look "raised" rather than
+        // its shadow alone - Material Design apps do this for the same reason. Combined with a
+        // stronger LinesDefault (feeds the border app.css adds to elevation-1/2 surfaces) and a
+        // couple of punchier shadow steps below, cards read clearly as bounded, raised surfaces
+        // in both themes instead of blending into the page.
+        var shadows = new MudBlazor.Shadow();
+        shadows.Elevation[1] = "0px 2px 4px -1px rgba(0,0,0,0.24),0px 1px 3px 0px rgba(0,0,0,0.18),0px 1px 2px 0px rgba(0,0,0,0.14)";
+        shadows.Elevation[2] = "0px 3px 6px -1px rgba(0,0,0,0.26),0px 2px 4px 0px rgba(0,0,0,0.2),0px 1px 3px 0px rgba(0,0,0,0.16)";
+
+        return new MudTheme
         {
-            Primary = "#03A9F4",
-            AppbarBackground = "#03A9F4",
-            // MudBlazor's default Secondary is a bright pink - overridden here to a plain gray,
-            // since we only use Color.Secondary for muted helper text, never as an accent.
-            Secondary = "#616161",
-        },
-        PaletteDark = new MudBlazor.PaletteDark
-        {
-            Primary = "#03A9F4",
-            Secondary = "#9E9E9E",
-        },
-    };
+            PaletteLight = new MudBlazor.PaletteLight
+            {
+                Primary = "#03A9F4",
+                AppbarBackground = "#03A9F4",
+                // MudBlazor's default Secondary is a bright pink - overridden here to a plain
+                // gray, since we only use Color.Secondary for muted helper text, never as an
+                // accent.
+                Secondary = "#616161",
+                Background = "#F2F4F7",
+                LinesDefault = "rgba(0,0,0,0.18)",
+            },
+            PaletteDark = new MudBlazor.PaletteDark
+            {
+                Primary = "#03A9F4",
+                Secondary = "#9E9E9E",
+                LinesDefault = "rgba(255,255,255,0.18)",
+            },
+            Shadows = shadows,
+        };
+    }
 
     // Full drawer, always open, on desktop (Md and up); a fully-hidden off-canvas overlay
     // toggled by the burger button below that ("Responsive" = Persistent above the breakpoint,
