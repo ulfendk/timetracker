@@ -54,6 +54,7 @@
   <!-- Today -->
   <data name="Today_TodayHeading" xml:space="preserve"><value>Today</value></data>
   <data name="Today_BackToToday" xml:space="preserve"><value>Back to today</value></data>
+  <data name="Today_WeekToDate" xml:space="preserve"><value>Week to date</value></data>
   <data name="Today_ThisWeek" xml:space="preserve"><value>This week</value></data>
   <data name="Today_LastWeek" xml:space="preserve"><value>Last week</value></data>
   <data name="Today_LogTime" xml:space="preserve"><value>Log time</value></data>

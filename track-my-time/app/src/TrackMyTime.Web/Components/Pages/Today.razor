@@ -39,14 +39,21 @@
 else
 {
     <MudGrid Class="mb-4">
-        <MudItem xs="12" sm="6">
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.overline" Color="Color.Secondary">@Localizer["Today_WeekToDate"]</MudText>
+                <MudText Typo="Typo.h6">@FormatWeek(_weekToDate)</MudText>
+                <MudText Typo="Typo.body2" Color="@DeltaColor(_weekToDate)">@FormatDelta(_weekToDate)</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
             <MudPaper Class="pa-3" Elevation="1">
                 <MudText Typo="Typo.overline" Color="Color.Secondary">@Localizer["Today_ThisWeek"]</MudText>
                 <MudText Typo="Typo.h6">@FormatWeek(_thisWeek)</MudText>
                 <MudText Typo="Typo.body2" Color="@DeltaColor(_thisWeek)">@FormatDelta(_thisWeek)</MudText>
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" sm="6">
+        <MudItem xs="12" sm="4">
             <MudPaper Class="pa-3" Elevation="1">
                 <MudText Typo="Typo.overline" Color="Color.Secondary">@Localizer["Today_LastWeek"]</MudText>
                 <MudText Typo="Typo.h6">@FormatWeek(_lastWeek)</MudText>
@@ -160,6 +167,7 @@ else
     private List<TimeEntryWithNames>? _entries = [];
     private decimal _totalHours;
     private bool _isDayOff;
+    private PeriodSummary? _weekToDate;
     private PeriodSummary? _thisWeek;
     private PeriodSummary? _lastWeek;
     private readonly NewEntryForm _form = new();
@@ -183,6 +191,7 @@ else
         _entries = summary.Entries.ToList();
         _totalHours = summary.TotalHours;
         _isDayOff = summary.IsDayOff;
+        _weekToDate = await SummaryService.GetWeekToDateAsync(_date);
         _thisWeek = await SummaryService.GetWeekAsync(_date);
         _lastWeek = await SummaryService.GetWeekAsync(_date, weeksOffset: -1);
         if (_form.ProjectId == 0 && _projects.Count > 0)

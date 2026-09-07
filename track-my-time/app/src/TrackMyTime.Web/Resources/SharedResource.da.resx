@@ -54,6 +54,7 @@
   <!-- Today -->
   <data name="Today_TodayHeading" xml:space="preserve"><value>I dag</value></data>
   <data name="Today_BackToToday" xml:space="preserve"><value>Tilbage til i dag</value></data>
+  <data name="Today_WeekToDate" xml:space="preserve"><value>Uge til dato</value></data>
   <data name="Today_ThisWeek" xml:space="preserve"><value>Denne uge</value></data>
   <data name="Today_LastWeek" xml:space="preserve"><value>Sidste uge</value></data>
   <data name="Today_LogTime" xml:space="preserve"><value>Registrer tid</value></data>

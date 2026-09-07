@@ -31,6 +31,17 @@ public sealed class TimeSummaryService(
         return SummarizeRangeAsync(from, to);
     }
 
+    /// <summary>Nominal vs. actual from the Monday of <paramref name="date"/>'s week up to and
+    /// including <paramref name="date"/> itself - e.g. on a Wednesday, nominal is 3/5 of the
+    /// week's target (weekends and any days off already marked that week still excluded, same as
+    /// <see cref="GetWeekAsync"/>). Lets the day view show whether you're on pace for the week
+    /// without waiting for it to finish.</summary>
+    public Task<PeriodSummary> GetWeekToDateAsync(DateOnly date)
+    {
+        var (from, _) = DateRanges.WeekContaining(date);
+        return SummarizeRangeAsync(from, date);
+    }
+
     public Task<PeriodSummary> GetMonthAsync(DateOnly anyDateInMonth)
     {
         var (from, to) = DateRanges.MonthContaining(anyDateInMonth);

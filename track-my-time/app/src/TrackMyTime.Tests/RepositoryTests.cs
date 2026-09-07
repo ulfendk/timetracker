@@ -260,4 +260,40 @@ public class RepositoryTests(DatabaseFixture fixture)
         Assert.Equal(6m, lastWeek.ActualWeekdayHours);
         Assert.Equal(lastMonday, lastWeek.From);
     }
+
+    [Fact]
+    public async Task TimeSummaryService_GetWeekToDateAsync_ProRatesNominalAndExcludesDaysOff()
+    {
+        var clients = new ClientRepository(fixture.ConnectionFactory);
+        var projects = new ProjectRepository(fixture.ConnectionFactory);
+        var entries = new TimeEntryRepository(fixture.ConnectionFactory);
+        var daysOff = new DayOffRepository(fixture.ConnectionFactory);
+        var nominalHours = new NominalHoursRepository(fixture.ConnectionFactory);
+
+        var clientId = await clients.CreateAsync(new Client { Name = "Initech" });
+        var projectId = await projects.CreateAsync(new Project { ClientId = clientId, Name = "Reporting" });
+        // A distinct EffectiveFrom from other tests in this collection, which share one database.
+        await nominalHours.CreateAsync(new NominalHoursSetting { EffectiveFrom = new DateOnly(2022, 1, 1), WeeklyHours = 37.5m });
+
+        // Monday of a known week, distinct from the weeks used by other tests in this shared-
+        // database collection.
+        var monday = new DateOnly(2040, 4, 2);
+        var tuesday = monday.AddDays(1);
+        var wednesday = monday.AddDays(2);
+        await daysOff.CreateAsync(new DayOff { Date = tuesday });
+        await entries.CreateAsync(new TimeEntry { Date = monday, ProjectId = projectId, DurationMinutes = 4 * 60 });
+        await entries.CreateAsync(new TimeEntry { Date = wednesday, ProjectId = projectId, DurationMinutes = 2 * 60 });
+        // Thursday hasn't happened yet from the viewed date's perspective - must not count.
+        await entries.CreateAsync(new TimeEntry { Date = wednesday.AddDays(1), ProjectId = projectId, DurationMinutes = 3 * 60 });
+
+        var summaryService = new TimeSummaryService(entries, daysOff, nominalHours);
+        var weekToDate = await summaryService.GetWeekToDateAsync(wednesday);
+
+        // Nominal: Monday + Wednesday only (7.5 h each) - Tuesday is a day off, Thursday/Friday
+        // are past the viewed date.
+        Assert.Equal(15m, weekToDate.NominalHours);
+        Assert.Equal(6m, weekToDate.ActualWeekdayHours);
+        Assert.Equal(monday, weekToDate.From);
+        Assert.Equal(wednesday, weekToDate.To);
+    }
 }
