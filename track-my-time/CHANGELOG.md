@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.7
+
+Cards (stat panels, forms, tables, week-view day cards) now have a visible border and a
+slightly stronger shadow in both light and dark mode, and the light theme's page background is
+a faint gray instead of matching white - the stock theme made every card blend into the page.
+
 ## 0.3.6
 
 The day view now shows a "Week to date" figure alongside "This week"/"Last week" - nominal
